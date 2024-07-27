@@ -5,11 +5,9 @@ import {tap} from "rxjs";
 class Peer {
   peer: RTCPeerConnection;
   dataChannel!: RTCDataChannel;
-  dataChannelOpen: boolean;
 
   constructor(peer: RTCPeerConnection) {
     this.peer = peer;
-    this.dataChannelOpen = false;
   }
 }
 
@@ -122,7 +120,6 @@ export class PeerManagerService {
 
   private setupDataChannel(id: string, dataChannel: RTCDataChannel) {
     dataChannel.onopen = () => {
-      this.peers.get(id)!.dataChannelOpen = true;
       this.onDataChannelOpen(dataChannel)
     };
     // should be initialized before the whole function is called
@@ -139,7 +136,7 @@ export class PeerManagerService {
 
   brodcastMessage(message: string) {
     for (let peer of this.peers.values()) {
-      if (peer.dataChannelOpen) {
+      if (peer.dataChannel.readyState == "open") {
         peer.dataChannel.send(message);
       }
     }
