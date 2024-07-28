@@ -43,11 +43,8 @@ export class GameService {
 
     app.stage.addChild(myCursor);
 
-    let currentMousePos = new PIXI.Point();
-
     app.stage.addEventListener('pointermove', e => {
       myCursor.position.copyFrom(e.global);
-      currentMousePos = e.global;
     });
 
     this.peerManager.onDataChannelOpen = (channel) => {
@@ -68,6 +65,7 @@ export class GameService {
 
     let prevWorldPointer = new PIXI.Point();
     app.ticker.add((ticker) => {
+      const currentMousePos = app.renderer.events.pointer.global;
       let worldPointer = new PIXI.Point(
         (currentMousePos.x - this.worldContainer.x) / this.worldContainer.scale.x,
         (currentMousePos.y - this.worldContainer.y) / this.worldContainer.scale.y
