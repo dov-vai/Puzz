@@ -7,6 +7,17 @@ export interface Shape {
   leftTab?: number;
 }
 
+export interface JigsawPiece {
+  sprite: PIXI.Sprite,
+  originalPivot: PIXI.Point,
+  neighbours: JigsawNeighbour[]
+}
+
+export interface JigsawNeighbour {
+  id: number;
+  direction: "top" | "bottom" | "left" | "right";
+}
+
 export class JigsawGenerator {
   private texture: PIXI.Texture;
   private tileWidth: number;
@@ -211,5 +222,37 @@ export class JigsawGenerator {
     }
 
     return sprites;
+  }
+
+  tagPieces(pieces: PIXI.Sprite[]) {
+    const columns = Math.ceil(this.texture.width / this.tileWidth);
+    const rows = Math.ceil(this.texture.height / this.tileWidth);
+    const taggedPieces: JigsawPiece[] = new Array(columns * rows);
+    for (let y = 0; y < rows; y++) {
+      for (let x = 0; x < columns; x++) {
+        const id = y * columns + x;
+        const piece = pieces[id];
+
+        const neighbours: JigsawNeighbour[] = [];
+
+        if (x != 0) {
+          neighbours.push({id: id - 1, direction: "left"});
+        }
+        if (x != columns - 1) {
+          neighbours.push({id: id + 1, direction: "right"});
+        }
+        if (y != 0) {
+          neighbours.push({id: id - columns, direction: "top"});
+        }
+        if (y != rows - 1) {
+          neighbours.push({id: id + columns, direction: "bottom"});
+        }
+
+        const originalPivot = new PIXI.Point(piece.pivot.x, piece.pivot.y);
+        taggedPieces[id] = {sprite: piece, originalPivot: originalPivot, neighbours: neighbours};
+
+      }
+    }
+    return taggedPieces;
   }
 }
