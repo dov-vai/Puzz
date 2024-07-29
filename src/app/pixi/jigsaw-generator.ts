@@ -193,4 +193,23 @@ export class JigsawGenerator {
 
     return pieces;
   }
+
+  renderPieces(pieces: PIXI.Graphics[], renderer: PIXI.Renderer) {
+    const columns = Math.ceil(this.texture.width / this.tileWidth);
+    const rows = Math.ceil(this.texture.height / this.tileWidth);
+
+    const sprites: PIXI.Sprite[] = new Array(columns * rows)
+
+    for (let y = 0; y < rows; y++) {
+      for (let x = 0; x < columns; x++) {
+        const piece = pieces[y * columns + x];
+        const sprite = PIXI.Sprite.from(renderer.generateTexture({target: piece, antialias: true}));
+        // set original pivot point
+        sprite.pivot.set(-piece.bounds.minX, -piece.bounds.minY);
+        sprites[y * columns + x] = sprite;
+      }
+    }
+
+    return sprites;
+  }
 }
