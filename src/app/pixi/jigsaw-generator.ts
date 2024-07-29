@@ -32,11 +32,7 @@ export class JigsawGenerator {
     ];
 
     const mask = new PIXI.Graphics();
-    const tileCenter = new PIXI.Point(tileWidth / 2, tileWidth / 2);
-
-    const topLeftEdge = new PIXI.Point(-4, 4);
-
-    mask.moveTo(topLeftEdge.x, topLeftEdge.y);
+    const topLeftEdge = new PIXI.Point(0, 0);
 
     // Top
     for (let i = 0; i < curvePoints.length / 6; i++) {
@@ -123,18 +119,18 @@ export class JigsawGenerator {
     return Math.random() > 0.5 ? 1 : -1;
   }
 
-  getRandomShapes(width: number, height: number): Shape[] {
-    const shapeArray: Shape[] = new Array(width * height);
+  getRandomShapes(columns: number, rows: number): Shape[] {
+    const shapeArray: Shape[] = new Array(columns * rows);
 
     // Initialize shapes with undefined tab values and edge constraints
-    for (let y = 0; y < height; y++) {
-      for (let x = 0; x < width; x++) {
+    for (let y = 0; y < rows; y++) {
+      for (let x = 0; x < columns; x++) {
         const topTab = y === 0 ? 0 : undefined;
-        const rightTab = x === width - 1 ? 0 : undefined;
-        const bottomTab = y === height - 1 ? 0 : undefined;
+        const rightTab = x === columns - 1 ? 0 : undefined;
+        const bottomTab = y === rows - 1 ? 0 : undefined;
         const leftTab = x === 0 ? 0 : undefined;
 
-        shapeArray[y * width + x] = {
+        shapeArray[y * columns + x] = {
           topTab: topTab,
           rightTab: rightTab,
           bottomTab: bottomTab,
@@ -144,21 +140,21 @@ export class JigsawGenerator {
     }
 
     // Set random tab values and ensure neighboring shapes have matching tabs
-    for (let y = 0; y < height; y++) {
-      for (let x = 0; x < width; x++) {
-        const shape = shapeArray[y * width + x];
+    for (let y = 0; y < rows; y++) {
+      for (let x = 0; x < columns; x++) {
+        const shape = shapeArray[y * columns + x];
 
-        const shapeRight = x < width - 1 ? shapeArray[y * width + (x + 1)] : undefined;
-        const shapeBottom = y < height - 1 ? shapeArray[(y + 1) * width + x] : undefined;
+        const shapeRight = x < columns - 1 ? shapeArray[y * columns + (x + 1)] : undefined;
+        const shapeBottom = y < rows - 1 ? shapeArray[(y + 1) * columns + x] : undefined;
 
-        if (x < width - 1) {
+        if (x < columns - 1) {
           shape.rightTab = this.getRandomTabValue();
           if (shapeRight) {
             shapeRight.leftTab = -shape.rightTab;
           }
         }
 
-        if (y < height - 1) {
+        if (y < rows - 1) {
           shape.bottomTab = this.getRandomTabValue();
           if (shapeBottom) {
             shapeBottom.topTab = -shape.bottomTab;
@@ -171,25 +167,25 @@ export class JigsawGenerator {
   }
 
   generatePieces(borderWidth: number, borderColor: number) {
-    const rows = Math.ceil(this.texture.width / this.tileWidth);
-    const columns = Math.ceil(this.texture.height / this.tileWidth);
+    const columns = Math.ceil(this.texture.width / this.tileWidth);
+    const rows = Math.ceil(this.texture.height / this.tileWidth);
 
-    const pieces: PIXI.Graphics[] = new Array(rows * columns);
-    const shapes = this.getRandomShapes(rows, columns);
+    const pieces: PIXI.Graphics[] = new Array(columns * rows);
+    const shapes = this.getRandomShapes(columns, rows);
 
     // scales the bezier curve
     const tileRatio = this.tileWidth / 100.0;
 
-    for (let y = 0; y < columns; y++) {
-      for (let x = 0; x < rows; x++) {
-        const shape = shapes[y * rows + x];
+    for (let y = 0; y < rows; y++) {
+      for (let x = 0; x < columns; x++) {
+        const shape = shapes[y * columns + x];
 
         const pieceTexture = new PIXI.Texture({
           source: this.texture.source,
           frame: new PIXI.Rectangle(x * this.tileWidth, y * this.tileWidth, this.tileWidth, this.tileWidth)
         });
 
-        pieces[y * rows + x] = this.getMask(tileRatio, shape, this.tileWidth)
+        pieces[y * columns + x] = this.getMask(tileRatio, shape, this.tileWidth)
           .stroke({width: borderWidth, color: borderColor})
           .fill({texture: pieceTexture});
       }
