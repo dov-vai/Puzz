@@ -1,6 +1,9 @@
 import * as PIXI from 'pixi.js';
 
 export class PixiUtils {
+  private constructor() {
+  }
+
   static getDistance(point1: PIXI.Point, point2: PIXI.Point) {
     const a = point1.x - point2.x;
     const b = point1.y - point2.y;
