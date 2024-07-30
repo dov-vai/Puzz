@@ -224,6 +224,18 @@ export class JigsawGenerator {
     return sprites;
   }
 
+  placePieces(container: PIXI.Container, pieces: PIXI.Graphics[] | PIXI.Sprite[]) {
+    const columns = Math.ceil(this.texture.width / this.tileWidth);
+    const rows = Math.ceil(this.texture.height / this.tileWidth);
+    for (let y = 0; y < rows; y++) {
+      for (let x = 0; x < columns; x++) {
+        const piece = pieces[y * columns + x];
+        piece.position.set(x * this.tileWidth, y * this.tileWidth);
+        container.addChild(piece);
+      }
+    }
+  }
+
   tagPieces(pieces: PIXI.Sprite[]) {
     const columns = Math.ceil(this.texture.width / this.tileWidth);
     const rows = Math.ceil(this.texture.height / this.tileWidth);
