@@ -5,15 +5,20 @@ import {
   ElementRef,
   inject,
   NgZone,
-  OnDestroy, OnInit, Renderer2,
+  OnDestroy,
+  OnInit,
+  Renderer2,
   ViewChild
 } from '@angular/core';
 import {GameService} from "../../services/game/game.service";
+import {RouterLink} from "@angular/router";
 
 @Component({
   selector: 'app-game',
   standalone: true,
-  imports: [],
+  imports: [
+    RouterLink
+  ],
   templateUrl: './game.component.html',
   styleUrl: './game.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush

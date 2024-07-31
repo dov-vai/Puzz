@@ -1,0 +1,14 @@
+.game-container {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+}
+
+.game-gui {
+  position: absolute;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+
