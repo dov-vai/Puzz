@@ -20,7 +20,7 @@ export class WebSocketService {
   }))
 
   public connect() {
-    if (!this.socket$ || !this.socket$.closed) {
+    if (!this.socket$ || this.socket$.closed) {
       this.socket$ = this.getNewWebSocket();
       const messages = this.socket$.pipe(
         tap({
