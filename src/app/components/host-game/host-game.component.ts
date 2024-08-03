@@ -1,4 +1,4 @@
-import {Component, inject} from '@angular/core';
+import {Component, inject, OnInit} from '@angular/core';
 import {RouterLink} from "@angular/router";
 import {WebSocketService} from "../../services/web-socket/web-socket.service";
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from "@angular/forms";
@@ -16,8 +16,13 @@ import {NgClass, NgIf} from "@angular/common";
   templateUrl: './host-game.component.html',
   styleUrl: './host-game.component.css'
 })
-export class HostGameComponent {
+export class HostGameComponent implements OnInit {
   websocket = inject(WebSocketService);
+
+  ngOnInit(): void {
+    this.websocket.messages$.subscribe(this.onMessage.bind(this));
+    this.websocket.connect();
+  }
 
   roomForm = new FormGroup({
     title: new FormControl('', [Validators.required]),
@@ -62,8 +67,20 @@ export class HostGameComponent {
   }
 
   onSubmit() {
-
+    this.websocket.sendMessage({Type: "host", Title: this.title?.value, Public: true});
   }
 
+  onMessage(message: any) {
+    switch (message.Type) {
+      case "connected": {
+        console.log("connected succesfully, SocketId:", message.SocketId);
+        break;
+      }
+      default: {
+        console.log("invalid message?", message);
+        break;
+      }
+    }
+  }
 
 }
