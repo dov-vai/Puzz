@@ -4,35 +4,21 @@
     <tr>
       <th>Room title</th>
       <th>Players online</th>
-      <th>Pieces count</th>
-      <th></th> <!-- For the Join button -->
+      <th style="text-align: right">
+        <button class="button is-primary" (click)="onRefreshRooms()">Refresh</button>
+      </th>
     </tr>
     </thead>
     <tbody>
-    <tr>
-      <td>Room 1</td>
-      <td>2/4</td>
-      <td>10</td>
-      <td>
-        <button class="button is-primary">Join</button>
-      </td>
-    </tr>
-    <tr>
-      <td>Room 2</td>
-      <td>3/4</td>
-      <td>15</td>
-      <td>
-        <button class="button is-primary">Join</button>
-      </td>
-    </tr>
-    <tr>
-      <td>Room 3</td>
-      <td>1/4</td>
-      <td>8</td>
-      <td>
-        <button class="button is-primary">Join</button>
-      </td>
-    </tr>
+      @if (publicRooms$ | async; as publicRooms) {
+        <tr *ngFor="let room of publicRooms">
+          <td>{{ room.Title }}</td>
+          <td>{{ room.PlayerCount }}</td>
+          <td>
+            <button class="button is-primary" (click)="onJoin(room.Id)">Join</button>
+          </td>
+        </tr>
+      }
     </tbody>
   </table>
 </div>
