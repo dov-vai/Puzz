@@ -1,7 +1,7 @@
 import {Injectable} from '@angular/core';
 import {WebSocketSubject} from "rxjs/internal/observable/dom/WebSocketSubject";
 import {webSocket} from "rxjs/webSocket";
-import {catchError, EMPTY, Observable, Subject, switchAll, tap} from "rxjs";
+import {catchError, EMPTY, Subject, tap} from "rxjs";
 
 export const WEBSOCKET_URL = "ws://localhost:5048/ws";
 
@@ -13,22 +13,21 @@ export const WEBSOCKET_URL = "ws://localhost:5048/ws";
 })
 export class WebSocketService {
   private socket$!: WebSocketSubject<any>;
-  private messagesSubject$ = new Subject<Observable<any>>();
+  private messagesSubject$ = new Subject<any>();
   // The switchAll() operator unsubscribes from the previous observable whenever a new observable is emitted and subscribes to the new one.
-  public messages$ = this.messagesSubject$.pipe(switchAll(), catchError(e => {
-    throw e;
-  }))
+  public messages$ = this.messagesSubject$.asObservable();
 
   public connect() {
     if (!this.socket$ || this.socket$.closed) {
       this.socket$ = this.getNewWebSocket();
-      const messages = this.socket$.pipe(
-        tap({
-          error: error => console.log(error),
-        }),
-        catchError(_ => EMPTY)
-      );
-      this.messagesSubject$.next(messages);
+      console.log("websocket got");
+      this.socket$.pipe(
+        tap(message => this.messagesSubject$.next(message)),
+        catchError(error => {
+          console.log(error);
+          return EMPTY;
+        })
+      ).subscribe();
     }
   }
 
