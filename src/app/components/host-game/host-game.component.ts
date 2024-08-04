@@ -1,8 +1,9 @@
-import {Component, inject, OnInit} from '@angular/core';
+import {Component, inject, OnDestroy, OnInit} from '@angular/core';
 import {RouterLink} from "@angular/router";
 import {WebSocketService} from "../../services/web-socket/web-socket.service";
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from "@angular/forms";
 import {NgClass, NgIf} from "@angular/common";
+import {Subscription} from "rxjs";
 
 @Component({
   selector: 'app-host-game',
@@ -16,11 +17,13 @@ import {NgClass, NgIf} from "@angular/common";
   templateUrl: './host-game.component.html',
   styleUrl: './host-game.component.css'
 })
-export class HostGameComponent implements OnInit {
+export class HostGameComponent implements OnInit, OnDestroy {
+
   websocket = inject(WebSocketService);
+  subscription!: Subscription;
 
   ngOnInit(): void {
-    this.websocket.messages$.subscribe(this.onMessage.bind(this));
+    this.subscription = this.websocket.messages$.subscribe(this.onMessage.bind(this));
     this.websocket.connect();
   }
 
@@ -83,4 +86,7 @@ export class HostGameComponent implements OnInit {
     }
   }
 
+  ngOnDestroy(): void {
+    this.subscription.unsubscribe();
+  }
 }
