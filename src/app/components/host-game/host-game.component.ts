@@ -30,6 +30,7 @@ export class HostGameComponent implements OnInit, OnDestroy {
   roomForm = new FormGroup({
     title: new FormControl('', [Validators.required]),
     image: new FormControl((null as File | null), [Validators.required]),
+    publicRoom: new FormControl(false),
   })
 
   get title() {
@@ -62,6 +63,10 @@ export class HostGameComponent implements OnInit, OnDestroy {
     return 'is-success';
   }
 
+  get publicRoom() {
+    return this.roomForm.get('publicRoom');
+  }
+
   onImagePicked(event: Event) {
     const file = (event.target as HTMLInputElement).files?.item(0);
     if (file) {
@@ -70,7 +75,7 @@ export class HostGameComponent implements OnInit, OnDestroy {
   }
 
   onSubmit() {
-    this.websocket.sendMessage({Type: "host", Title: this.title?.value, Public: true});
+    this.websocket.sendMessage({Type: "host", Title: this.title?.value, Public: this.publicRoom?.value});
   }
 
   onMessage(message: any) {
