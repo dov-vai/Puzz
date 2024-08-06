@@ -1,5 +1,5 @@
 import {Component, inject, OnDestroy, OnInit} from '@angular/core';
-import {RouterLink} from "@angular/router";
+import {Router, RouterLink} from "@angular/router";
 import {WebSocketService} from "../../services/web-socket/web-socket.service";
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from "@angular/forms";
 import {NgClass, NgIf} from "@angular/common";
@@ -18,8 +18,8 @@ import {Subscription} from "rxjs";
   styleUrl: './host-game.component.css'
 })
 export class HostGameComponent implements OnInit, OnDestroy {
-
   websocket = inject(WebSocketService);
+  router = inject(Router);
   subscription!: Subscription;
 
   ngOnInit(): void {
@@ -82,6 +82,7 @@ export class HostGameComponent implements OnInit, OnDestroy {
     switch (message.Type) {
       case "connected": {
         console.log("connected succesfully, SocketId:", message.SocketId);
+        this.router.navigate(['play']);
         break;
       }
       default: {

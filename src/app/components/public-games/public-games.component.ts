@@ -2,6 +2,7 @@ import {Component, inject, OnDestroy, OnInit} from '@angular/core';
 import {WebSocketService} from "../../services/web-socket/web-socket.service";
 import {Observable, Subject, Subscription} from "rxjs";
 import {AsyncPipe, NgForOf, NgIf} from "@angular/common";
+import {Router} from "@angular/router";
 
 interface PublicRoom {
   Id: string,
@@ -22,6 +23,7 @@ interface PublicRoom {
 })
 export class PublicGamesComponent implements OnInit, OnDestroy {
   websocket = inject(WebSocketService);
+  router = inject(Router);
   subscription!: Subscription;
   publicRoomsSubject$: Subject<PublicRoom[]> = new Subject<PublicRoom[]>();
   publicRooms$: Observable<PublicRoom[]> = this.publicRoomsSubject$.asObservable();
@@ -36,6 +38,11 @@ export class PublicGamesComponent implements OnInit, OnDestroy {
     switch (message.Type) {
       case "publicRooms": {
         this.publicRoomsSubject$.next(message.Rooms as PublicRoom[]);
+        break;
+      }
+      case "connected": {
+        console.log("connected successfully SocketId: ", message.SocketId);
+        this.router.navigate(['play']);
         break;
       }
       default: {

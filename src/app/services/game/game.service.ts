@@ -12,6 +12,8 @@ export class GameService {
   }
 
   async init(canvas: HTMLCanvasElement) {
+    await this.peerManager.init();
+
     await SceneManager.initialize(canvas, 0x2d3250);
 
     const scene = new JigsawScene(this.peerManager);
@@ -21,6 +23,7 @@ export class GameService {
 
   destroy() {
     SceneManager.destroy();
+    this.peerManager.destroy();
   }
 
 }

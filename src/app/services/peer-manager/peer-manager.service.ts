@@ -1,6 +1,6 @@
 import {Injectable} from '@angular/core';
 import {WebSocketService} from "../web-socket/web-socket.service";
-import {tap} from "rxjs";
+import {Subscription, tap} from "rxjs";
 
 class Peer {
   peer: RTCPeerConnection;
@@ -15,13 +15,19 @@ class Peer {
   providedIn: 'root'
 })
 export class PeerManagerService {
-  private peers = new Map<string, Peer>();
-  private myId: string = "";
+  private peers!: Map<string, Peer>;
+  private myId!: string;
+  private subscription!: Subscription;
   onDataChannelOpen: (channel: RTCDataChannel) => void = () => {
   };
 
   constructor(private socket: WebSocketService) {
-    this.socket.messages$.pipe(
+  }
+
+  public async init() {
+    this.peers = new Map<string, Peer>();
+    this.myId = "";
+    this.subscription = this.socket.messages$.pipe(
       tap({
         error: error => console.log("[PeerManager] failed connecting to WebSocket", error)
       })
@@ -29,11 +35,23 @@ export class PeerManagerService {
       await this.handleMessage(message)
     });
     this.socket.connect();
+    this.socket.sendMessage({Type: "p2pInit"});
+  }
+
+  public destroy() {
+    for (const [key, peer] of this.peers) {
+      peer.peer.close();
+      this.peers.delete(key);
+    }
+
+    if (!this.subscription.closed) {
+      this.subscription.unsubscribe();
+    }
   }
 
   private async handleMessage(data: any) {
     switch (data.Type) {
-      case "connected": {
+      case "p2pInit": {
         this.myId = data.SocketId;
         console.log("my socketid is:", this.myId);
         break;
