@@ -47,22 +47,6 @@ export class HostGameComponent implements OnInit, OnDestroy {
     return 'is-success';
   }
 
-  get image() {
-    return this.roomForm.get('image');
-  }
-
-  get imageClass() {
-    if (!this.image?.dirty && this.image?.untouched) {
-      return "";
-    }
-
-    if (this.image?.invalid) {
-      return 'is-danger';
-    }
-
-    return 'is-success';
-  }
-
   get publicRoom() {
     return this.roomForm.get('publicRoom');
   }
