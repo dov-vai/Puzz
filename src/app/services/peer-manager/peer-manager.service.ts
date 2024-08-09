@@ -152,7 +152,7 @@ export class PeerManagerService {
     }
   }
 
-  brodcastMessage(message: string) {
+  broadcastMessage(message: string) {
     for (let peer of this.peers.values()) {
       if (peer.dataChannel.readyState == "open") {
         peer.dataChannel.send(message);
