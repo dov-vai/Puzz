@@ -4,6 +4,10 @@ import {InfinityCanvas} from "./infinity-canvas";
 import {JigsawGenerator, JigsawPiece} from "./jigsaw-generator";
 import {PixiUtils} from "./utils";
 import {PeerManagerService} from "../services/peer-manager/peer-manager.service";
+import {MessageEncoder} from "../network/message-encoder";
+import {HelloMessage} from "../network/protocol/hello-message";
+import {MessageDecoder} from "../network/message-decoder";
+import {MessageType} from "../network/common";
 
 export class JigsawScene extends PIXI.Container implements IScene {
   private worldContainer: InfinityCanvas;
@@ -37,28 +41,56 @@ export class JigsawScene extends PIXI.Container implements IScene {
 
     generator.placePieces(this.worldContainer, renderedPieces);
 
+    this.setupP2P();
+
     this.addChild(this.worldContainer);
   }
 
   private setupP2P() {
-    const cursor = new PIXI.GraphicsContext()
-      .circle(0, 0, 8)
-      .fill({color: 0xffffff})
-      .stroke({color: 0x111111, alpha: 0.87, width: 1})
+    // const cursor = new PIXI.GraphicsContext()
+    //   .circle(0, 0, 8)
+    //   .fill({color: 0xffffff})
+    //   .stroke({color: 0x111111, alpha: 0.87, width: 1})
 
     this.peerManager.onDataChannelOpen = (channel) => {
-      const peerCursor = this.worldContainer.addChild(
-        new PIXI.Graphics(cursor)
-      );
+      // const peerCursor = this.worldContainer.addChild(
+      //   new PIXI.Graphics(cursor)
+      // );
 
-      channel.onclose = () => {
-        this.worldContainer.removeChild(peerCursor);
-      }
+      // channel.onclose = () => {
+      //   this.worldContainer.removeChild(peerCursor);
+      // }
 
-      channel.onmessage = (msg => {
-        peerCursor.position.copyFrom(JSON.parse(msg.data));
-        peerCursor.scale.x = 1 / this.worldContainer.scale.x;
-        peerCursor.scale.y = 1 / this.worldContainer.scale.y;
+      channel.onmessage = (event => {
+        if (typeof event.data === "string") {
+          console.log("got string?: ", event.data);
+        } else if (event.data instanceof ArrayBuffer) {
+          if (event.data.byteLength < 1) {
+            return;
+          }
+          const decoder = new MessageDecoder(event.data);
+          const type = decoder.decodeUint8();
+          switch (type) {
+            case MessageType.Hello: {
+              const hello = new HelloMessage();
+              hello.decode(decoder);
+              console.log("received from peer: ", hello.peerId);
+              break;
+            }
+            case MessageType.Cursor: {
+              break;
+            }
+            default: {
+              console.log("Received unknown message type");
+            }
+          }
+        } else {
+          console.log("Received unknown data type, can't parse");
+        }
+
+        // peerCursor.position.copyFrom(JSON.parse(msg.data));
+        // peerCursor.scale.x = 1 / this.worldContainer.scale.x;
+        // peerCursor.scale.y = 1 / this.worldContainer.scale.y;
       })
     };
   }
@@ -176,7 +208,12 @@ export class JigsawScene extends PIXI.Container implements IScene {
     );
 
     if (this.prevWorldPointer.x != worldPointer.x && this.prevWorldPointer.y != worldPointer.y && this.world.containsPoint(worldPointer)) {
-      this.peerManager.brodcastMessage(JSON.stringify(worldPointer));
+      this.peerManager.broadcastMessage(JSON.stringify(worldPointer));
+      const hello = new HelloMessage("hello bruh");
+      const message = new MessageEncoder();
+      hello.encode(message);
+
+      this.peerManager.broadcastMessage(message.getBuffer());
     }
 
     this.prevWorldPointer = worldPointer;
