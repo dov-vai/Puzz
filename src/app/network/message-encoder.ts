@@ -45,6 +45,17 @@ export class MessageEncoder {
     this.offset += 4;
   }
 
+  public encodeString(value: string): void {
+    this.ensureCapacity(value.length + 1);
+    const view = new DataView(this.buffer.buffer, this.offset, value.length + 1);
+    for (let i = 0; i < value.length; i++) {
+      view.setUint8(i, value.charCodeAt(i));
+      this.offset++;
+    }
+    view.setUint8(value.length, 0); // end of string
+    this.offset++;
+  }
+
   public getBuffer(): ArrayBuffer {
     return this.buffer.slice(0, this.offset);
   }
