@@ -30,4 +30,14 @@ export class MessageDecoder {
     this.offset += 4;
     return value;
   }
+
+  public decodeString(): string {
+    let value = "";
+    while (true) {
+      const char = this.view.getUint8(this.offset++);
+      if (char === 0) break; // end of string
+      value += String.fromCharCode(char);
+    }
+    return value;
+  }
 }
