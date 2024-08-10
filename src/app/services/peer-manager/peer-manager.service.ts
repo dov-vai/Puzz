@@ -138,7 +138,7 @@ export class PeerManagerService {
 
   private setupDataChannel(id: string, dataChannel: RTCDataChannel) {
     dataChannel.onopen = () => {
-      this.onDataChannelOpen(dataChannel)
+      this.onDataChannelOpen(dataChannel);
     };
     // should be initialized before the whole function is called
     this.peers.get(id)!.dataChannel = dataChannel;
@@ -152,10 +152,14 @@ export class PeerManagerService {
     }
   }
 
-  broadcastMessage(message: string) {
+  broadcastMessage(message: string | ArrayBuffer) {
     for (let peer of this.peers.values()) {
-      if (peer.dataChannel.readyState == "open") {
-        peer.dataChannel.send(message);
+      if (peer.dataChannel && peer.dataChannel.readyState === "open") {
+        if (typeof message === "string") {
+          peer.dataChannel.send(message);
+        } else {
+          peer.dataChannel.send(message);
+        }
       }
     }
   }
