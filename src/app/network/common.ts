@@ -1,4 +1,4 @@
 export enum MessageType {
-  Hello,
-  Cursor,
+  Hello = 0x1,
+  Cursor = 0x2,
 }
