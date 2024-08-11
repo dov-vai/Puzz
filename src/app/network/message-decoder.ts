@@ -40,4 +40,12 @@ export class MessageDecoder {
     }
     return value;
   }
+
+  public done() {
+    return this.view.byteLength === this.offset;
+  }
+
+  public getLength() {
+    return this.view.byteLength;
+  }
 }
