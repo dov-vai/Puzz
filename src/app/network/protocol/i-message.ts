@@ -4,5 +4,5 @@ import {MessageDecoder} from "../message-decoder";
 export interface IMessage {
   encode(encoder: MessageEncoder): void;
 
-  decode(decode: MessageDecoder): void;
+  decode(decoder: MessageDecoder): void;
 }
