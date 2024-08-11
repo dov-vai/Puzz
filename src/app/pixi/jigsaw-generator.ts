@@ -8,6 +8,7 @@ export interface Shape {
 }
 
 export interface JigsawPiece {
+  id: number;
   sprite: PIXI.Sprite,
   originalPivot: PIXI.Point,
   neighbours: JigsawNeighbour[]
@@ -125,12 +126,28 @@ export class JigsawGenerator {
     return mask;
   }
 
+  // pseudo-random number generator
+  // https://stackoverflow.com/a/47593316
+  private splitMix32(a: number) {
+    return () => {
+      a |= 0;
+      a = a + 0x9e3779b9 | 0;
+      let t = a ^ a >>> 16;
+      t = Math.imul(t, 0x21f0aaad);
+      t = t ^ t >>> 15;
+      t = Math.imul(t, 0x735a2d97);
+      return ((t = t ^ t >>> 15) >>> 0) / 4294967296;
+    }
+  }
 
-  private getRandomTabValue(): number {
-    return Math.random() > 0.5 ? 1 : -1;
+  private getRandomTabValue(random: () => number): number {
+    return random() > 0.5 ? 1 : -1;
   }
 
   getRandomShapes(columns: number, rows: number): Shape[] {
+    // TODO: seed generation
+    const random = this.splitMix32(1970827786);
+
     const shapeArray: Shape[] = new Array(columns * rows);
 
     // Initialize shapes with undefined tab values and edge constraints
@@ -159,14 +176,14 @@ export class JigsawGenerator {
         const shapeBottom = y < rows - 1 ? shapeArray[(y + 1) * columns + x] : undefined;
 
         if (x < columns - 1) {
-          shape.rightTab = this.getRandomTabValue();
+          shape.rightTab = this.getRandomTabValue(random);
           if (shapeRight) {
             shapeRight.leftTab = -shape.rightTab;
           }
         }
 
         if (y < rows - 1) {
-          shape.bottomTab = this.getRandomTabValue();
+          shape.bottomTab = this.getRandomTabValue(random);
           if (shapeBottom) {
             shapeBottom.topTab = -shape.bottomTab;
           }
@@ -261,7 +278,7 @@ export class JigsawGenerator {
         }
 
         const originalPivot = new PIXI.Point(piece.pivot.x, piece.pivot.y);
-        taggedPieces[id] = {sprite: piece, originalPivot: originalPivot, neighbours: neighbours};
+        taggedPieces[id] = {id: id, sprite: piece, originalPivot: originalPivot, neighbours: neighbours};
 
       }
     }
