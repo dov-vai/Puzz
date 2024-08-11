@@ -11,7 +11,11 @@ import {
   ViewChild
 } from '@angular/core';
 import {GameService} from "../../services/game/game.service";
-import {RouterLink} from "@angular/router";
+import {Router, RouterLink} from "@angular/router";
+
+export interface GameExtras {
+  image: File;
+}
 
 @Component({
   selector: 'app-game',
@@ -26,7 +30,12 @@ import {RouterLink} from "@angular/router";
 export class GameComponent implements OnInit, AfterViewInit, OnDestroy {
   game = inject(GameService);
   ngZone = inject(NgZone);
-  renderer = inject(Renderer2)
+  renderer = inject(Renderer2);
+  extras: GameExtras;
+
+  constructor(private router: Router) {
+    this.extras = this.router.lastSuccessfulNavigation?.extras.state as GameExtras;
+  }
 
   @ViewChild("gameCanvas")
   gameCanvas!: ElementRef<HTMLCanvasElement>;
@@ -39,7 +48,7 @@ export class GameComponent implements OnInit, AfterViewInit, OnDestroy {
   ngAfterViewInit() {
     this.ngZone.runOutsideAngular(() => {
       (async () => {
-        await this.game.init(this.gameCanvas.nativeElement);
+        await this.game.init(this.gameCanvas.nativeElement, this.extras.image);
       })();
     });
   }

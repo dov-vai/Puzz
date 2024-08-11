@@ -4,6 +4,7 @@ import {WebSocketService} from "../../services/web-socket/web-socket.service";
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from "@angular/forms";
 import {NgClass, NgIf} from "@angular/common";
 import {Subscription} from "rxjs";
+import {GameExtras} from "../game/game.component";
 
 @Component({
   selector: 'app-host-game',
@@ -51,6 +52,10 @@ export class HostGameComponent implements OnInit, OnDestroy {
     return this.roomForm.get('publicRoom');
   }
 
+  get image() {
+    return this.roomForm.get('image');
+  }
+
   onImagePicked(event: Event) {
     const file = (event.target as HTMLInputElement).files?.item(0);
     if (file) {
@@ -66,7 +71,10 @@ export class HostGameComponent implements OnInit, OnDestroy {
     switch (message.Type) {
       case "connected": {
         console.log("connected succesfully, SocketId:", message.SocketId);
-        this.router.navigate(['play']);
+
+        // TODO: image verification
+        const extras: GameExtras = {image: this.image!.value!}
+        this.router.navigate(['play'], {state: extras});
         break;
       }
       default: {

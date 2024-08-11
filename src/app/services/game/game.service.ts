@@ -11,7 +11,7 @@ export class GameService {
   constructor(private peerManager: PeerManagerService) {
   }
 
-  async init(canvas: HTMLCanvasElement) {
+  async init(canvas: HTMLCanvasElement, image: File) {
     await SceneManager.initialize(canvas, 0x2d3250);
 
     const scene = new JigsawScene(this.peerManager);
