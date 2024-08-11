@@ -15,10 +15,12 @@ export class JigsawScene extends PIXI.Container implements IScene {
   private prevWorldPointer: PIXI.Point;
   private taggedPieces: JigsawPiece[];
   private tileWidth: number;
+  private dragTarget: JigsawPiece | null;
 
   constructor(private peerManager: PeerManagerService) {
     super();
     this.prevWorldPointer = new PIXI.Point();
+    this.dragTarget = null;
 
     // setup the infinity canvas
     const worldSize = 5000;
@@ -75,6 +77,9 @@ export class JigsawScene extends PIXI.Container implements IScene {
               const cursor = new CursorMessage();
               cursor.decode(decoder);
               peerCursor.position.set(cursor.x, cursor.y);
+              if (cursor.piece) {
+                this.taggedPieces[cursor.piece].sprite.position.set(cursor.x, cursor.y);
+              }
               peerCursor.scale.x = 1 / this.worldContainer.scale.x;
               peerCursor.scale.y = 1 / this.worldContainer.scale.y;
               break;
@@ -97,32 +102,30 @@ export class JigsawScene extends PIXI.Container implements IScene {
     this.worldContainer.eventMode = "static";
     this.worldContainer.hitArea = this.world.boundsArea;
 
-    let dragTarget: JigsawPiece | null = null;
-
     function onDragStart(this: JigsawPiece, event: PIXI.FederatedPointerEvent) {
       sceneThis.worldContainer.pause();
       this.sprite.alpha = 0.5;
       const pointerCoords = this.sprite.toLocal(event.global);
       this.sprite.pivot.copyFrom(pointerCoords);
-      dragTarget = this;
+      sceneThis.dragTarget = this;
       sceneThis.worldContainer.on('pointermove', onDragMove);
     }
 
     function onDragMove(event: PIXI.FederatedPointerEvent) {
-      if (dragTarget) {
+      if (sceneThis.dragTarget) {
         let point = sceneThis.world.toLocal(event.global);
         if (sceneThis.world.containsPoint(point)) {
-          dragTarget.sprite.position.copyFrom(point);
+          sceneThis.dragTarget.sprite.position.copyFrom(point);
         }
       }
     }
 
     function onDragEnd() {
-      if (dragTarget) {
+      if (sceneThis.dragTarget) {
         sceneThis.worldContainer.off('pointermove', onDragMove);
-        dragTarget.sprite.alpha = 1;
-        sceneThis.handlePieceSnap(dragTarget);
-        dragTarget = null;
+        sceneThis.dragTarget.sprite.alpha = 1;
+        sceneThis.handlePieceSnap(sceneThis.dragTarget);
+        sceneThis.dragTarget = null;
       }
       sceneThis.worldContainer.resume();
     }
@@ -184,9 +187,9 @@ export class JigsawScene extends PIXI.Container implements IScene {
       (currentMousePos.y - this.worldContainer.y) / this.worldContainer.scale.y
     );
 
-    if (this.prevWorldPointer.x != worldPointer.x && this.prevWorldPointer.y != worldPointer.y && this.world.containsPoint(worldPointer)) {
+    if ((this.prevWorldPointer.x != worldPointer.x || this.prevWorldPointer.y != worldPointer.y) && this.world.containsPoint(worldPointer)) {
       const message = new MessageEncoder();
-      const cursor = new CursorMessage(worldPointer.x, worldPointer.y);
+      const cursor = new CursorMessage(worldPointer.x, worldPointer.y, this.dragTarget?.id);
       cursor.encode(message);
       this.peerManager.broadcastMessage(message.getBuffer());
     }
