@@ -5,9 +5,9 @@ import {JigsawGenerator, JigsawPiece} from "./jigsaw-generator";
 import {PixiUtils} from "./utils";
 import {PeerManagerService} from "../services/peer-manager/peer-manager.service";
 import {MessageEncoder} from "../network/message-encoder";
-import {HelloMessage} from "../network/protocol/hello-message";
 import {MessageDecoder} from "../network/message-decoder";
 import {MessageType} from "../network/common";
+import {CursorMessage} from "../network/protocol/cursor-message";
 
 export class JigsawScene extends PIXI.Container implements IScene {
   private worldContainer: InfinityCanvas;
@@ -47,19 +47,19 @@ export class JigsawScene extends PIXI.Container implements IScene {
   }
 
   private setupP2P() {
-    // const cursor = new PIXI.GraphicsContext()
-    //   .circle(0, 0, 8)
-    //   .fill({color: 0xffffff})
-    //   .stroke({color: 0x111111, alpha: 0.87, width: 1})
+    const cursor = new PIXI.GraphicsContext()
+      .circle(0, 0, 8)
+      .fill({color: 0xffffff})
+      .stroke({color: 0x111111, alpha: 0.87, width: 1})
 
     this.peerManager.onDataChannelOpen = (channel) => {
-      // const peerCursor = this.worldContainer.addChild(
-      //   new PIXI.Graphics(cursor)
-      // );
+      const peerCursor = this.worldContainer.addChild(
+        new PIXI.Graphics(cursor)
+      );
 
-      // channel.onclose = () => {
-      //   this.worldContainer.removeChild(peerCursor);
-      // }
+      channel.onclose = () => {
+        this.worldContainer.removeChild(peerCursor);
+      }
 
       channel.onmessage = (event => {
         if (typeof event.data === "string") {
@@ -71,13 +71,12 @@ export class JigsawScene extends PIXI.Container implements IScene {
           const decoder = new MessageDecoder(event.data);
           const type = decoder.decodeUint8();
           switch (type) {
-            case MessageType.Hello: {
-              const hello = new HelloMessage();
-              hello.decode(decoder);
-              console.log("received from peer: ", hello.peerId);
-              break;
-            }
             case MessageType.Cursor: {
+              const cursor = new CursorMessage();
+              cursor.decode(decoder);
+              peerCursor.position.set(cursor.x, cursor.y);
+              peerCursor.scale.x = 1 / this.worldContainer.scale.x;
+              peerCursor.scale.y = 1 / this.worldContainer.scale.y;
               break;
             }
             default: {
@@ -87,31 +86,9 @@ export class JigsawScene extends PIXI.Container implements IScene {
         } else {
           console.log("Received unknown data type, can't parse");
         }
-
-        // peerCursor.position.copyFrom(JSON.parse(msg.data));
-        // peerCursor.scale.x = 1 / this.worldContainer.scale.x;
-        // peerCursor.scale.y = 1 / this.worldContainer.scale.y;
       })
     };
   }
-
-  // private setupCursor(){
-  //   const cursor = new PIXI.GraphicsContext()
-  //     .circle(0, 0, 8)
-  //     .fill({color: 0xffffff})
-  //     .stroke({color: 0x111111, alpha: 0.87, width: 1})
-  //
-  //   const myCursor = new PIXI.Graphics(cursor);
-  //   myCursor.position.set(this.world.width / 2, this.world.height / 2);
-  //
-  //   this.addChild(myCursor);
-  //
-  //
-  //
-  //   app.stage.addEventListener('pointermove', e => {
-  //     myCursor.position.copyFrom(e.global);
-  //   });
-  // }
 
   private setupEvents() {
     // reference to the class itself, because "this" is also used in event functions to reference jigsaw pieces
@@ -208,11 +185,9 @@ export class JigsawScene extends PIXI.Container implements IScene {
     );
 
     if (this.prevWorldPointer.x != worldPointer.x && this.prevWorldPointer.y != worldPointer.y && this.world.containsPoint(worldPointer)) {
-      this.peerManager.broadcastMessage(JSON.stringify(worldPointer));
-      const hello = new HelloMessage("hello bruh");
       const message = new MessageEncoder();
-      hello.encode(message);
-
+      const cursor = new CursorMessage(worldPointer.x, worldPointer.y);
+      cursor.encode(message);
       this.peerManager.broadcastMessage(message.getBuffer());
     }
 
