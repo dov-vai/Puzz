@@ -29,7 +29,7 @@ export class JigsawScene extends PIXI.Container implements IScene {
     this.worldContainer.addChild(this.world);
 
     // initialized in the scene manager so shouldn't need to load
-    const image: PIXI.Texture = PIXI.Assets.get("cat");
+    const image: PIXI.Texture = PIXI.Assets.get("image");
     // generate the jigsaw
 
     this.tileWidth = 100;

@@ -12,7 +12,7 @@ export class GameService {
   }
 
   async init(canvas: HTMLCanvasElement, image: File) {
-    await SceneManager.initialize(canvas, 0x2d3250);
+    await SceneManager.initialize(canvas, 0x2d3250, image);
 
     const scene = new JigsawScene(this.peerManager);
 

@@ -26,7 +26,7 @@ export class SceneManager {
     return Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
   }
 
-  public static async initialize(canvas: HTMLCanvasElement, backgroundColor: number) {
+  public static async initialize(canvas: HTMLCanvasElement, backgroundColor: number, image: File) {
     SceneManager.app = new PIXI.Application();
 
     // for pixi js devtools extension
@@ -41,18 +41,29 @@ export class SceneManager {
       background: backgroundColor,
     });
 
-    await SceneManager.initializeAssets();
+    await SceneManager.initializeAssets(image);
 
     SceneManager.app.ticker.add((ticker) => SceneManager.update(ticker));
     window.addEventListener("resize", SceneManager.resize);
 
   }
 
-  // hardcoded for testing right now... TODO: remove when appropriate
-  // manager can also handle the asset loading by calling
-  // a method in the scene class once it's finished to continue the initialization
-  private static async initializeAssets() {
-    await PIXI.Assets.load({alias: "cat", src: "cat.jpg"})
+  private static async initializeAssets(image: File) {
+    const url = await SceneManager.readAsDataUrl(image);
+    await PIXI.Assets.load({alias: "image", src: url});
+  }
+
+  private static async readAsDataUrl(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        resolve(event.target?.result as string)
+      }
+      reader.onerror = (event) => {
+        reject(event.target?.error)
+      }
+      reader.readAsDataURL(file)
+    })
   }
 
   public static changeScene(newScene: IScene) {
