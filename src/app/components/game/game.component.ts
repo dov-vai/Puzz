@@ -34,7 +34,7 @@ export class GameComponent implements OnInit, AfterViewInit, OnDestroy {
   extras: GameExtras;
 
   constructor(private router: Router) {
-    this.extras = this.router.lastSuccessfulNavigation?.extras.state as GameExtras;
+    this.extras = this.router.getCurrentNavigation()?.extras.state as GameExtras;
   }
 
   @ViewChild("gameCanvas")
