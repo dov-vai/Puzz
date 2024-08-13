@@ -45,15 +45,19 @@ export class MessageEncoder {
     this.offset += 4;
   }
 
-  public encodeString(value: string): void {
-    this.ensureCapacity(value.length + 1);
-    const view = new DataView(this.buffer.buffer, this.offset, value.length + 1);
+  // if no length is provided, then adds a 0 as a delimiter for the string
+  public encodeString(value: string, length?: number): void {
+    const bufferLength = length ? value.length : value.length + 1;
+    this.ensureCapacity(bufferLength);
+    const view = new DataView(this.buffer.buffer, this.offset, bufferLength);
     for (let i = 0; i < value.length; i++) {
       view.setUint8(i, value.charCodeAt(i));
       this.offset++;
     }
-    view.setUint8(value.length, 0); // end of string
-    this.offset++;
+    if (!length) {
+      view.setUint8(value.length, 0); // end of string
+      this.offset++;
+    }
   }
 
   public encodeBuffer(value: ArrayBuffer): void {
