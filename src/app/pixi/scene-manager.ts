@@ -26,7 +26,7 @@ export class SceneManager {
     return Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
   }
 
-  public static async initialize(canvas: HTMLCanvasElement, backgroundColor: number, image: File) {
+  public static async initialize(canvas: HTMLCanvasElement, backgroundColor: number, image?: File) {
     SceneManager.app = new PIXI.Application();
 
     // for pixi js devtools extension
@@ -41,7 +41,9 @@ export class SceneManager {
       background: backgroundColor,
     });
 
-    await SceneManager.initializeAssets(image);
+    if (image) {
+      await SceneManager.initializeAssets(image);
+    }
 
     SceneManager.app.ticker.add((ticker) => SceneManager.update(ticker));
     window.addEventListener("resize", SceneManager.resize);

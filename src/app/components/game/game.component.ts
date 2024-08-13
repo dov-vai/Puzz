@@ -14,7 +14,7 @@ import {GameService} from "../../services/game/game.service";
 import {Router, RouterLink} from "@angular/router";
 
 export interface GameExtras {
-  image: File;
+  image?: File;
 }
 
 @Component({
@@ -31,7 +31,7 @@ export class GameComponent implements OnInit, AfterViewInit, OnDestroy {
   game = inject(GameService);
   ngZone = inject(NgZone);
   renderer = inject(Renderer2);
-  extras: GameExtras;
+  extras?: GameExtras;
 
   constructor(private router: Router) {
     this.extras = this.router.getCurrentNavigation()?.extras.state as GameExtras;
@@ -48,7 +48,7 @@ export class GameComponent implements OnInit, AfterViewInit, OnDestroy {
   ngAfterViewInit() {
     this.ngZone.runOutsideAngular(() => {
       (async () => {
-        await this.game.init(this.gameCanvas.nativeElement, this.extras.image);
+        await this.game.init(this.gameCanvas.nativeElement, this.extras?.image);
       })();
     });
   }
