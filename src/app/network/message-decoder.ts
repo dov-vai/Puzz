@@ -42,7 +42,7 @@ export class MessageDecoder {
   }
 
   public decodeBuffer(size: number): ArrayBuffer {
-    const value = this.view.buffer.slice(this.offset, size);
+    const value = this.view.buffer.slice(this.offset, this.offset + size);
     this.offset += size;
     return value;
   }
