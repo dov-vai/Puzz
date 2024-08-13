@@ -56,6 +56,12 @@ export class MessageEncoder {
     this.offset++;
   }
 
+  public encodeBuffer(value: ArrayBuffer): void {
+    this.ensureCapacity(value.byteLength);
+    this.buffer.set(new Uint8Array(value), this.offset);
+    this.offset += value.byteLength;
+  }
+
   public getBuffer(): ArrayBuffer {
     return this.buffer.slice(0, this.offset);
   }
