@@ -1,13 +1,14 @@
 import {IScene, SceneManager} from "./scene-manager";
 import * as PIXI from "pixi.js";
 import {InfinityCanvas} from "./infinity-canvas";
-import {JigsawGenerator, JigsawPiece} from "./jigsaw-generator";
+import {JigsawGenerator} from "./jigsaw-generator";
 import {PixiUtils} from "./utils";
 import {PeerManagerService} from "../services/peer-manager/peer-manager.service";
 import {MessageEncoder} from "../network/message-encoder";
 import {MessageDecoder} from "../network/message-decoder";
 import {MessageType} from "../network/common";
 import {CursorMessage} from "../network/protocol/cursor-message";
+import {JigsawPiece} from "./jigsaw-piece";
 
 export class JigsawScene extends PIXI.Container implements IScene {
   private worldContainer: InfinityCanvas;
@@ -34,14 +35,12 @@ export class JigsawScene extends PIXI.Container implements IScene {
 
     this.tileWidth = 100;
     const generator = new JigsawGenerator(image, this.tileWidth);
-    const pieces = generator.generatePieces(5, 0x000000);
-    const renderedPieces = generator.renderPieces(pieces, SceneManager.appRenderer);
-    this.taggedPieces = generator.tagPieces(renderedPieces);
+    this.taggedPieces = generator.generatePieces(5, 0x000000, SceneManager.appRenderer);
 
     // setup dragging and dropping jigsaw pieces
     this.setupEvents();
 
-    generator.placePieces(this.worldContainer, renderedPieces);
+    generator.placePieces(this.worldContainer, this.taggedPieces);
 
     this.setupP2P();
 
@@ -78,7 +77,7 @@ export class JigsawScene extends PIXI.Container implements IScene {
               cursor.decode(decoder);
               peerCursor.position.set(cursor.x, cursor.y);
               if (cursor.piece) {
-                this.taggedPieces[cursor.piece].sprite.position.set(cursor.x, cursor.y);
+                this.taggedPieces[cursor.piece].position.set(cursor.x, cursor.y);
               }
               peerCursor.scale.x = 1 / this.worldContainer.scale.x;
               peerCursor.scale.y = 1 / this.worldContainer.scale.y;
@@ -104,10 +103,17 @@ export class JigsawScene extends PIXI.Container implements IScene {
 
     function onDragStart(this: JigsawPiece, event: PIXI.FederatedPointerEvent) {
       sceneThis.worldContainer.pause();
-      this.sprite.alpha = 0.5;
-      const pointerCoords = this.sprite.toLocal(event.global);
-      this.sprite.pivot.copyFrom(pointerCoords);
+      let target: PIXI.Sprite | PIXI.Container = this;
+      if (this.parent != sceneThis.worldContainer) {
+        target = this.parent;
+      }
+
+      target.alpha = 0.5;
+      const pointerCoords = target.toLocal(event.global);
+      target.pivot.copyFrom(pointerCoords);
+      target.position.copyFrom(sceneThis.world.toLocal(event.global));
       sceneThis.dragTarget = this;
+
       sceneThis.worldContainer.on('pointermove', onDragMove);
     }
 
@@ -115,7 +121,11 @@ export class JigsawScene extends PIXI.Container implements IScene {
       if (sceneThis.dragTarget) {
         let point = sceneThis.world.toLocal(event.global);
         if (sceneThis.world.containsPoint(point)) {
-          sceneThis.dragTarget.sprite.position.copyFrom(point);
+          if (sceneThis.dragTarget.parent != sceneThis.worldContainer) {
+            sceneThis.dragTarget.parent?.position.copyFrom(point);
+          } else {
+            sceneThis.dragTarget.position.copyFrom(point);
+          }
         }
       }
     }
@@ -123,8 +133,15 @@ export class JigsawScene extends PIXI.Container implements IScene {
     function onDragEnd() {
       if (sceneThis.dragTarget) {
         sceneThis.worldContainer.off('pointermove', onDragMove);
-        sceneThis.dragTarget.sprite.alpha = 1;
-        sceneThis.handlePieceSnap(sceneThis.dragTarget);
+
+        if (sceneThis.dragTarget.parent != sceneThis.worldContainer) {
+          sceneThis.dragTarget.parent.alpha = 1;
+          sceneThis.handleContainerSnap(sceneThis.dragTarget.parent);
+        } else {
+          sceneThis.dragTarget.alpha = 1;
+          sceneThis.handlePieceSnap(sceneThis.dragTarget);
+        }
+
         sceneThis.dragTarget = null;
       }
       sceneThis.worldContainer.resume();
@@ -134,50 +151,100 @@ export class JigsawScene extends PIXI.Container implements IScene {
     this.worldContainer.on('pointerup', onDragEnd);
 
     this.taggedPieces.forEach(piece => {
-      piece.sprite.eventMode = "static";
-      piece.sprite.cursor = "pointer";
-      piece.sprite.on('pointerdown', onDragStart, piece);
+      piece.eventMode = "static";
+      piece.cursor = "pointer";
+      piece.on('pointerdown', onDragStart, piece);
     });
   }
 
-  private handlePieceSnap(piece: JigsawPiece) {
+  private handleContainerSnap(container: PIXI.Container) {
+    for (let child of container.children) {
+      // only one needs to be aligned properly
+      if (child instanceof JigsawPiece) {
+        if (this.handlePieceSnap(child)) {
+          break;
+        }
+      }
+    }
+  }
+
+  private handlePieceSnap(piece: JigsawPiece): boolean {
     for (let i = 0; i < piece.neighbours.length; i++) {
       const id = piece.neighbours[i].id;
       const direction = piece.neighbours[i].direction;
       const neighbour = this.taggedPieces[id];
 
+      const pieceInContainer = piece.parent != this.worldContainer;
+      const neighbourInContainer = neighbour.parent != this.worldContainer
+
+      if (pieceInContainer && neighbourInContainer && piece.parent === neighbour.parent) {
+        continue;
+      }
+
       const wiggleRoom = this.tileWidth / 4;
-      const distance = PixiUtils.getDistanceToNeighbourTab(this.world, piece!.sprite, neighbour.sprite, wiggleRoom, direction);
-      //console.log("distance to neighbour", distance);
+      const distance = PixiUtils.getDistanceToNeighbourTab(this.world, piece!, neighbour, wiggleRoom, direction);
       if (distance <= this.tileWidth / 2) {
-        piece!.sprite.pivot.copyFrom(piece!.originalPivot);
-        piece!.sprite.position.copyFrom(piece!.originalPivot);
+        let target: PIXI.Sprite | PIXI.Container = piece;
 
-        const neighbourPivot = this.world.toLocal(neighbour.originalPivot, neighbour.sprite);
+        if (pieceInContainer) {
+          const pos = piece.parent?.toLocal(piece.alignmentPivot, piece);
+          piece.parent?.pivot.copyFrom(pos);
+          piece.parent.position.copyFrom(pos);
+          target = piece.parent;
+        } else {
+          piece.resetPivot();
+        }
 
-        // TODO: group into container, containers can also be moved and snapped
-        // also probably should start thinking about the network protocol
+        const neighbourPivot = this.world.toLocal(neighbour.alignmentPivot, neighbour);
+
         switch (direction) {
           case "top": {
-            piece!.sprite.position.set(neighbourPivot.x, neighbourPivot.y + this.tileWidth);
+            target.position.set(neighbourPivot.x, neighbourPivot.y + this.tileWidth);
             break;
           }
           case "bottom": {
-            piece!.sprite.position.set(neighbourPivot.x, neighbourPivot.y - this.tileWidth);
+            target.position.set(neighbourPivot.x, neighbourPivot.y - this.tileWidth);
             break;
           }
           case "left": {
-            piece!.sprite.position.set(neighbourPivot.x + this.tileWidth, neighbourPivot.y);
+            target.position.set(neighbourPivot.x + this.tileWidth, neighbourPivot.y);
             break;
           }
           case "right": {
-            piece!.sprite.position.set(neighbourPivot.x - this.tileWidth, neighbourPivot.y);
+            target.position.set(neighbourPivot.x - this.tileWidth, neighbourPivot.y);
             break;
           }
         }
-        break;
+
+        if (!pieceInContainer && !neighbourInContainer) {
+          const container = new PIXI.Container({isRenderGroup: true});
+          container.addChild(neighbour, piece);
+          this.worldContainer.removeChild(neighbour, piece);
+          this.worldContainer.addChild(container);
+        } else if (!pieceInContainer && neighbourInContainer) {
+          const piecePos = neighbour.parent?.toLocal(piece.position, this.world);
+          neighbour.parent.addChild(piece);
+          this.worldContainer.removeChild(piece);
+          piece.position.copyFrom(piecePos);
+        } else if (pieceInContainer && !neighbourInContainer) {
+          const neighbourPos = piece.parent?.toLocal(neighbour.position, this.world);
+          piece.parent?.addChild(neighbour);
+          this.worldContainer.removeChild(neighbour);
+          neighbour.position.copyFrom(neighbourPos);
+        } else {
+          const container = piece.parent;
+          const children = [...container?.children];
+          for (let child of children) {
+            let piecePos = neighbour.parent?.toLocal(this.world.toLocal(child, child.parent), this.world);
+            neighbour.parent.addChild(child);
+            child.position.copyFrom(piecePos);
+          }
+          container?.removeFromParent();
+        }
+        return true;
       }
     }
+    return false;
   }
 
   public update(ticker: PIXI.Ticker) {

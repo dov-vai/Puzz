@@ -1,22 +1,11 @@
 import * as PIXI from 'pixi.js';
+import {JigsawNeighbour, JigsawPiece} from "./jigsaw-piece";
 
 export interface Shape {
   topTab?: number;
   rightTab?: number;
   bottomTab?: number;
   leftTab?: number;
-}
-
-export interface JigsawPiece {
-  id: number;
-  sprite: PIXI.Sprite,
-  originalPivot: PIXI.Point,
-  neighbours: JigsawNeighbour[]
-}
-
-export interface JigsawNeighbour {
-  id: number;
-  direction: "top" | "bottom" | "left" | "right";
 }
 
 export class JigsawGenerator {
@@ -194,11 +183,11 @@ export class JigsawGenerator {
     return shapeArray;
   }
 
-  generatePieces(borderWidth: number, borderColor: number) {
+  generatePieces(borderWidth: number, borderColor: number, renderer: PIXI.Renderer) {
     const columns = Math.ceil(this.texture.width / this.tileWidth);
     const rows = Math.ceil(this.texture.height / this.tileWidth);
 
-    const pieces: PIXI.Graphics[] = new Array(columns * rows);
+    const pieces: JigsawPiece[] = new Array(columns * rows);
     const shapes = this.getRandomShapes(columns, rows);
 
     // scales the bezier curve
@@ -206,64 +195,21 @@ export class JigsawGenerator {
 
     for (let y = 0; y < rows; y++) {
       for (let x = 0; x < columns; x++) {
-        const shape = shapes[y * columns + x];
+        const id = y * columns + x;
 
+        const shape = shapes[id];
         const pieceTexture = new PIXI.Texture({
           source: this.texture.source,
           frame: new PIXI.Rectangle(x * this.tileWidth, y * this.tileWidth, this.tileWidth, this.tileWidth)
         });
 
-        pieces[y * columns + x] = this.getMask(tileRatio, shape, this.tileWidth)
+        const maskedPiece = this.getMask(tileRatio, shape, this.tileWidth)
           .stroke({width: borderWidth, color: borderColor})
           .fill({texture: pieceTexture});
-      }
-    }
 
-    return pieces;
-  }
-
-  renderPieces(pieces: PIXI.Graphics[], renderer: PIXI.Renderer) {
-    const columns = Math.ceil(this.texture.width / this.tileWidth);
-    const rows = Math.ceil(this.texture.height / this.tileWidth);
-
-    const sprites: PIXI.Sprite[] = new Array(columns * rows)
-
-    for (let y = 0; y < rows; y++) {
-      for (let x = 0; x < columns; x++) {
-        const piece = pieces[y * columns + x];
-        const sprite = PIXI.Sprite.from(renderer.generateTexture({target: piece, antialias: true}));
-        // set original pivot point
-        sprite.pivot.set(-piece.bounds.minX, -piece.bounds.minY);
-        sprites[y * columns + x] = sprite;
-      }
-    }
-
-    return sprites;
-  }
-
-  placePieces(container: PIXI.Container, pieces: PIXI.Graphics[] | PIXI.Sprite[]) {
-    const columns = Math.ceil(this.texture.width / this.tileWidth);
-    const rows = Math.ceil(this.texture.height / this.tileWidth);
-    for (let y = 0; y < rows; y++) {
-      for (let x = 0; x < columns; x++) {
-        const piece = pieces[y * columns + x];
-        piece.position.set(x * this.tileWidth, y * this.tileWidth);
-        container.addChild(piece);
-      }
-    }
-  }
-
-  tagPieces(pieces: PIXI.Sprite[]) {
-    const columns = Math.ceil(this.texture.width / this.tileWidth);
-    const rows = Math.ceil(this.texture.height / this.tileWidth);
-    const taggedPieces: JigsawPiece[] = new Array(columns * rows);
-    for (let y = 0; y < rows; y++) {
-      for (let x = 0; x < columns; x++) {
-        const id = y * columns + x;
-        const piece = pieces[id];
-
+        const renderedTexture = renderer.generateTexture({target: maskedPiece, antialias: true})
+        const alignmentPivot = new PIXI.Point(-maskedPiece.bounds.minX, -maskedPiece.bounds.minY);
         const neighbours: JigsawNeighbour[] = [];
-
         if (x != 0) {
           neighbours.push({id: id - 1, direction: "left"});
         }
@@ -276,12 +222,24 @@ export class JigsawGenerator {
         if (y != rows - 1) {
           neighbours.push({id: id + columns, direction: "bottom"});
         }
-
-        const originalPivot = new PIXI.Point(piece.pivot.x, piece.pivot.y);
-        taggedPieces[id] = {id: id, sprite: piece, originalPivot: originalPivot, neighbours: neighbours};
-
+        pieces[id] = new JigsawPiece(id, alignmentPivot, neighbours, renderedTexture);
       }
     }
-    return taggedPieces;
+
+    return pieces;
   }
+
+  placePieces(container: PIXI.Container, pieces: JigsawPiece[]) {
+    const columns = Math.ceil(this.texture.width / this.tileWidth);
+    const rows = Math.ceil(this.texture.height / this.tileWidth);
+    for (let y = 0; y < rows; y++) {
+      for (let x = 0; x < columns; x++) {
+        const piece = pieces[y * columns + x];
+        piece.resetPivot();
+        piece.position.set(x * this.tileWidth, y * this.tileWidth);
+        container.addChild(piece);
+      }
+    }
+  }
+
 }
