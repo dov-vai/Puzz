@@ -9,14 +9,18 @@ import {MessageDecoder} from "../network/message-decoder";
 import {MessageType} from "../network/common";
 import {CursorMessage} from "../network/protocol/cursor-message";
 import {JigsawPiece} from "./jigsaw-piece";
+import {ImageRequestMessage} from "../network/protocol/image-request-message";
+import {FileReceiveMessage} from "../network/protocol/file-receive-message";
+import {FileChunkMessage} from "../network/protocol/file-chunk-message";
 
 export class JigsawScene extends PIXI.Container implements IScene {
   private worldContainer: InfinityCanvas;
   private world: PIXI.Graphics;
   private prevWorldPointer: PIXI.Point;
-  private taggedPieces: JigsawPiece[];
-  private tileWidth: number;
+  private taggedPieces!: JigsawPiece[];
+  private tileWidth!: number;
   private dragTarget: JigsawPiece | null;
+  private image: PIXI.Texture | undefined;
 
   constructor(private peerManager: PeerManagerService) {
     super();
@@ -29,22 +33,26 @@ export class JigsawScene extends PIXI.Container implements IScene {
     this.world = new PIXI.Graphics().rect(0, 0, worldSize, worldSize).fill({color: 0x424769});
     this.worldContainer.addChild(this.world);
 
-    // initialized in the scene manager so shouldn't need to load
-    const image: PIXI.Texture = PIXI.Assets.get("image");
-    // generate the jigsaw
+    this.setupP2P();
 
+    // initialized in the scene manager so shouldn't need to load
+    this.image = PIXI.Assets.get("image");
+
+    // we are the host so can load immediately
+    if (this.image) {
+      this.loadPieces(this.image);
+    }
+
+    this.addChild(this.worldContainer);
+  }
+
+  private loadPieces(image: PIXI.Texture) {
     this.tileWidth = 100;
     const generator = new JigsawGenerator(image, this.tileWidth);
     this.taggedPieces = generator.generatePieces(5, 0x000000, SceneManager.appRenderer);
-
     // setup dragging and dropping jigsaw pieces
     this.setupEvents();
-
     generator.placePieces(this.worldContainer, this.taggedPieces);
-
-    this.setupP2P();
-
-    this.addChild(this.worldContainer);
   }
 
   private setupP2P() {
@@ -52,6 +60,9 @@ export class JigsawScene extends PIXI.Container implements IScene {
       .circle(0, 0, 8)
       .fill({color: 0xffffff})
       .stroke({color: 0x111111, alpha: 0.87, width: 1})
+
+    let imageBuffer: Uint8Array;
+    let bufferOffset: number;
 
     this.peerManager.onDataChannelOpen = (channel) => {
       const peerCursor = this.worldContainer.addChild(
@@ -83,6 +94,55 @@ export class JigsawScene extends PIXI.Container implements IScene {
               peerCursor.scale.y = 1 / this.worldContainer.scale.y;
               break;
             }
+            case MessageType.FileReceive: {
+              const fileReceive = new FileReceiveMessage();
+              fileReceive.decode(decoder);
+              imageBuffer = new Uint8Array(fileReceive.size);
+              bufferOffset = 0;
+              break;
+            }
+            case MessageType.FileChunk: {
+              if (bufferOffset === imageBuffer.length) {
+                break;
+              }
+
+              const fileChunk = new FileChunkMessage();
+              fileChunk.decode(decoder);
+              imageBuffer.set(new Uint8Array(fileChunk.buffer!), bufferOffset);
+              bufferOffset += fileChunk.buffer!.byteLength;
+
+              if (bufferOffset === imageBuffer.length) {
+                const decoder = new MessageDecoder(imageBuffer.buffer);
+                PIXI.Assets.load(decoder.decodeString(bufferOffset)).then((texture: PIXI.Texture) => {
+                  this.loadPieces(texture);
+                })
+              }
+              break;
+            }
+            case MessageType.ImageRequest: {
+              if (!this.peerManager.host) {
+                break;
+              }
+
+              const encoder = new MessageEncoder();
+              const buffer = this.convertStringToBinary(this.image?.source._sourceOrigin!);
+              const fileReceive = new FileReceiveMessage("image", buffer.byteLength);
+              fileReceive.encode(encoder);
+              channel.send(encoder.getBuffer());
+
+              // TODO: expensive operation, should be async
+              const chunkSize = 15 * 1024;
+              let size = 0;
+              while (size < buffer.byteLength) {
+                const encoder = new MessageEncoder();
+                const end = Math.min(chunkSize, buffer.byteLength - size);
+                const fileChunk = new FileChunkMessage(buffer.slice(size, size + end), end);
+                fileChunk.encode(encoder);
+                channel.send(encoder.getBuffer());
+                size += end;
+              }
+              break;
+            }
             default: {
               console.log("Received unknown message type");
             }
@@ -91,7 +151,23 @@ export class JigsawScene extends PIXI.Container implements IScene {
           console.log("Received unknown data type, can't parse");
         }
       })
+
+      // TODO: should probably be initialized somewhere else
+      // we are not the host, so we need an image
+      if (!this.image && !this.peerManager.host) {
+        const encoder = new MessageEncoder();
+        const imageRequest = new ImageRequestMessage();
+        imageRequest.encode(encoder)
+        // TODO: distinguish host from peers, so broadcasting won't be necessary
+        this.peerManager.broadcastMessage(encoder.getBuffer());
+      }
     };
+  }
+
+  private convertStringToBinary(value: string) {
+    const encoder = new MessageEncoder();
+    encoder.encodeString(value, value.length);
+    return encoder.getBuffer();
   }
 
   private setupEvents() {
