@@ -31,12 +31,14 @@ export class MessageDecoder {
     return value;
   }
 
-  public decodeString(): string {
+  public decodeString(length?: number): string {
     let value = "";
-    while (true) {
+    let i = 0;
+    while (length ? i < length : true) {
       const char = this.view.getUint8(this.offset++);
-      if (char === 0) break; // end of string
+      if (!length && char === 0) break; // end of string
       value += String.fromCharCode(char);
+      i++;
     }
     return value;
   }
