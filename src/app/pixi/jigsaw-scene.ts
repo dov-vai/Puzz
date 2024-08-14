@@ -350,10 +350,7 @@ export class JigsawScene extends PIXI.Container implements IScene {
 
   public update(ticker: PIXI.Ticker) {
     const currentMousePos = SceneManager.appRenderer.events.pointer.global;
-    const worldPointer = new PIXI.Point(
-      (currentMousePos.x - this.worldContainer.x) / this.worldContainer.scale.x,
-      (currentMousePos.y - this.worldContainer.y) / this.worldContainer.scale.y
-    );
+    const worldPointer = this.world.toLocal(currentMousePos);
 
     if ((this.prevWorldPointer.x != worldPointer.x || this.prevWorldPointer.y != worldPointer.y) && this.world.containsPoint(worldPointer)) {
       const message = new MessageEncoder();
