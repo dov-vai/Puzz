@@ -66,6 +66,8 @@ export class JigsawScene extends PIXI.Container implements IScene {
     let bufferOffset: number;
 
     this.peerManager.onDataChannelOpen = (channel) => {
+      let lastPickedPiece: number = -1;
+
       const peerCursor = this.worldContainer.addChild(
         new PIXI.Graphics(cursor)
       );
@@ -87,13 +89,22 @@ export class JigsawScene extends PIXI.Container implements IScene {
             case MessageType.Cursor: {
               const cursor = new CursorMessage();
               cursor.decode(decoder);
-              peerCursor.position.set(cursor.x, cursor.y);
+              const cursorPosition = new PIXI.Point(cursor.x, cursor.y);
+              peerCursor.position.copyFrom(cursorPosition);
               if (cursor.piece) {
                 let target: JigsawPiece | PIXI.Container = this.taggedPieces[cursor.piece];
                 if (target.parent != this.worldContainer) {
                   target = target.parent;
                 }
-                target.position.set(cursor.x, cursor.y);
+                const pivotCoords = target.toLocal(cursorPosition, this.world);
+                if (lastPickedPiece != cursor.piece) {
+                  // TODO: more foolproof pivot setting?
+                  target.pivot.copyFrom(pivotCoords);
+                }
+                target.position.copyFrom(cursorPosition);
+                lastPickedPiece = cursor.piece;
+              } else {
+                lastPickedPiece = -1;
               }
               peerCursor.scale.x = 1 / this.worldContainer.scale.x;
               peerCursor.scale.y = 1 / this.worldContainer.scale.y;
