@@ -4,4 +4,5 @@ export enum MessageType {
   FileChunk = 0x3,
   ImageRequest = 0x4,
   Snap = 0x5,
+  Sync = 0x6,
 }
