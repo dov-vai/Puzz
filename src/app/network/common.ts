@@ -5,4 +5,5 @@ export enum MessageType {
   ImageRequest = 0x4,
   Snap = 0x5,
   Sync = 0x6,
+  SyncRequest = 0x7,
 }
