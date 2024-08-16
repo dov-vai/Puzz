@@ -449,6 +449,10 @@ export class JigsawScene extends PIXI.Container implements IScene {
       const container = new PIXI.Container({isRenderGroup: true});
       container.addChild(neighbour, piece);
       this.worldContainer.removeChild(neighbour, piece);
+      // set container position and pivot because on creation it's (0,0)
+      // which causes issues when syncing clients
+      container.pivot.copyFrom(piece);
+      container.position.copyFrom(piece);
       this.worldContainer.addChild(container);
     } else if (!pieceInContainer && neighbourInContainer) {
       const piecePos = neighbour.parent?.toLocal(piece.position, this.world);
