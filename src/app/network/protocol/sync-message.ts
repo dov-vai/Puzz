@@ -14,6 +14,7 @@ export interface SyncPiece {
 export interface SyncContainer {
   x: number;
   y: number;
+  pivotPiece: number;
   pivotX: number;
   pivotY: number;
   pieceIds: number[];
@@ -42,6 +43,7 @@ export class SyncMessage implements IMessage {
     for (let container of this.containers) {
       encoder.encodeFloat32(container.x);
       encoder.encodeFloat32(container.y);
+      encoder.encodeUint16(container.pivotPiece);
       encoder.encodeFloat32(container.pivotX);
       encoder.encodeFloat32(container.pivotY);
       encoder.encodeUint16(container.pieceIds.length);
@@ -70,6 +72,7 @@ export class SyncMessage implements IMessage {
       const container: SyncContainer = {
         x: decoder.decodeFloat32(),
         y: decoder.decodeFloat32(),
+        pivotPiece: decoder.decodeUint16(),
         pivotX: decoder.decodeFloat32(),
         pivotY: decoder.decodeFloat32(),
         pieceIds: new Array(decoder.decodeUint16())
