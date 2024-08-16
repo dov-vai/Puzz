@@ -13,6 +13,8 @@ import {ImageRequestMessage} from "../network/protocol/image-request-message";
 import {FileReceiveMessage} from "../network/protocol/file-receive-message";
 import {FileChunkMessage} from "../network/protocol/file-chunk-message";
 import {SnapMessage} from "../network/protocol/snap-message";
+import {SyncContainer, SyncMessage, SyncPiece} from "../network/protocol/sync-message";
+import {SyncRequestMessage} from "../network/protocol/sync-request-message";
 
 export class JigsawScene extends PIXI.Container implements IScene {
   private worldContainer: InfinityCanvas;
@@ -131,6 +133,10 @@ export class JigsawScene extends PIXI.Container implements IScene {
                 const decoder = new MessageDecoder(imageBuffer.buffer);
                 PIXI.Assets.load(decoder.decodeString(bufferOffset)).then((texture: PIXI.Texture) => {
                   this.loadPieces(texture);
+                  const encoder = new MessageEncoder();
+                  const syncRequest = new SyncRequestMessage();
+                  syncRequest.encode(encoder);
+                  this.peerManager.broadcastMessage(encoder.getBuffer())
                 })
               }
               break;
@@ -163,6 +169,95 @@ export class JigsawScene extends PIXI.Container implements IScene {
               const snap = new SnapMessage();
               snap.decode(decoder);
               this.handlePieceSnap(this.taggedPieces[snap.pieceId], this.taggedPieces[snap.pieceId].neighbours[snap.neighbourId])
+              break;
+            }
+            case MessageType.SyncRequest: {
+              if (!this.peerManager.host) {
+                break;
+              }
+
+              const pieces: SyncPiece[] = [];
+              const containers: SyncContainer[] = [];
+
+              const checkedPieces: Set<number> = new Set();
+              for (let piece of this.taggedPieces) {
+                if (checkedPieces.has(piece.id)) {
+                  continue;
+                }
+
+                if (piece.parent != this.worldContainer) {
+                  const syncContainer: SyncContainer = {
+                    x: piece.parent.x,
+                    y: piece.parent.y,
+                    pivotPiece: -1,
+                    pivotX: -1,
+                    pivotY: -1,
+                    pieceIds: []
+                  }
+
+                  for (let containerPiece of piece.parent?.children) {
+                    if (containerPiece instanceof JigsawPiece) {
+                      if (syncContainer.pivotPiece == -1) {
+                        const pivotPoint = containerPiece.toLocal(piece.parent?.pivot, piece.parent);
+                        if (containerPiece.containsPoint(pivotPoint)) {
+                          syncContainer.pivotPiece = containerPiece.id;
+                          syncContainer.pivotX = pivotPoint.x;
+                          syncContainer.pivotY = pivotPoint.y;
+                        }
+                      }
+                      syncContainer.pieceIds.push(containerPiece.id);
+                      checkedPieces.add(containerPiece.id);
+                    }
+                  }
+                  containers.push(syncContainer);
+                } else {
+                  const syncPiece: SyncPiece = {
+                    id: piece.id,
+                    x: piece.x,
+                    y: piece.y,
+                    pivotX: piece.pivot.x,
+                    pivotY: piece.pivot.y
+                  }
+                  checkedPieces.add(piece.id);
+                  pieces.push(syncPiece);
+                }
+              }
+              const encoder = new MessageEncoder();
+              const sync = new SyncMessage(pieces, containers);
+              sync.encode(encoder);
+              channel.send(encoder.getBuffer());
+              break;
+            }
+            case MessageType.Sync: {
+              const sync = new SyncMessage();
+              sync.decode(decoder);
+
+              for (let syncPiece of sync.pieces) {
+                const piece = this.taggedPieces[syncPiece.id];
+                piece.pivot.set(syncPiece.pivotX, syncPiece.pivotY);
+                piece.position.set(syncPiece.x, syncPiece.y);
+              }
+
+              for (let container of sync.containers) {
+                // hash set for faster neighbour lookup
+                const pieceSet = new Set(container.pieceIds);
+                for (let containerPiece of container.pieceIds) {
+                  const piece = this.taggedPieces[containerPiece];
+                  for (let neighbour of piece.neighbours) {
+                    if (pieceSet.has(neighbour.id)) {
+                      this.handlePieceSnap(piece, neighbour);
+                    }
+                  }
+                }
+                // pick the first one just to get the parent container
+                const piece = this.taggedPieces[container.pieceIds[0]];
+                const containerPivot = piece.parent?.toLocal(
+                  new PIXI.Point(container.pivotX, container.pivotY),
+                  this.taggedPieces[container.pivotPiece]
+                );
+                piece.parent?.pivot.copyFrom(containerPivot);
+                piece.parent.position.set(container.x, container.y);
+              }
               break;
             }
             default: {
@@ -299,6 +394,10 @@ export class JigsawScene extends PIXI.Container implements IScene {
     const neighbour = this.taggedPieces[jigsawNeighbour.id];
     const pieceInContainer = piece.parent != this.worldContainer;
     const neighbourInContainer = neighbour.parent != this.worldContainer
+
+    if (pieceInContainer && neighbourInContainer && piece.parent === neighbour.parent) {
+      return;
+    }
 
     let target: PIXI.Sprite | PIXI.Container = piece;
 
