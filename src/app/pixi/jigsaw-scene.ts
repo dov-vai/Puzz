@@ -91,7 +91,7 @@ export class JigsawScene extends PIXI.Container implements IScene {
               cursor.decode(decoder);
               const cursorPosition = new PIXI.Point(cursor.x, cursor.y);
               peerCursor.position.copyFrom(cursorPosition);
-              if (cursor.piece) {
+              if (cursor.piece != undefined) {
                 let target: JigsawPiece | PIXI.Container = this.taggedPieces[cursor.piece];
                 if (target.parent != this.worldContainer) {
                   target = target.parent;

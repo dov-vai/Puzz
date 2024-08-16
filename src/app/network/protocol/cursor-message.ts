@@ -18,7 +18,7 @@ export class CursorMessage implements IMessage {
     encoder.encodeUint8(MessageType.Cursor);
     encoder.encodeFloat32(this.x);
     encoder.encodeFloat32(this.y);
-    if (this.piece) {
+    if (this.piece != undefined) {
       encoder.encodeUint16(this.piece);
     }
   }
