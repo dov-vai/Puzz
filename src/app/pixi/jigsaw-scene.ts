@@ -33,6 +33,7 @@ export class JigsawScene extends PIXI.Container implements IScene {
     // setup the infinity canvas
     const worldSize = 5000;
     this.worldContainer = new InfinityCanvas(SceneManager.appRenderer.events, worldSize, worldSize);
+    this.worldContainer.sortableChildren = true;
     this.world = new PIXI.Graphics().rect(0, 0, worldSize, worldSize).fill({color: 0x424769});
     this.worldContainer.addChild(this.world);
 
@@ -73,6 +74,7 @@ export class JigsawScene extends PIXI.Container implements IScene {
       const peerCursor = this.worldContainer.addChild(
         new PIXI.Graphics(cursor)
       );
+      peerCursor.zIndex = 2;
 
       channel.onclose = () => {
         this.worldContainer.removeChild(peerCursor);
@@ -101,11 +103,20 @@ export class JigsawScene extends PIXI.Container implements IScene {
                 const pivotCoords = target.toLocal(cursorPosition, this.world);
                 if (lastPickedPiece != cursor.piece) {
                   // TODO: more foolproof pivot setting?
+                  target.zIndex = 1;
                   target.pivot.copyFrom(pivotCoords);
                 }
                 target.position.copyFrom(cursorPosition);
                 lastPickedPiece = cursor.piece;
               } else {
+                if (lastPickedPiece != -1) {
+                  let target: JigsawPiece | PIXI.Container = this.taggedPieces[lastPickedPiece];
+                  if (target.parent != this.worldContainer) {
+                    target = target.parent;
+                  }
+                  target.zIndex = 0;
+                }
+
                 lastPickedPiece = -1;
               }
               peerCursor.scale.x = 1 / this.worldContainer.scale.x;
@@ -301,6 +312,7 @@ export class JigsawScene extends PIXI.Container implements IScene {
         target = this.parent;
       }
 
+      target.zIndex = 1;
       target.alpha = 0.5;
       const pointerCoords = target.toLocal(event.global);
       target.pivot.copyFrom(pointerCoords);
@@ -329,9 +341,11 @@ export class JigsawScene extends PIXI.Container implements IScene {
 
         if (sceneThis.dragTarget.parent != sceneThis.worldContainer) {
           sceneThis.dragTarget.parent.alpha = 1;
+          sceneThis.dragTarget.parent.zIndex = 0;
           sceneThis.checkContainerSnap(sceneThis.dragTarget.parent);
         } else {
           sceneThis.dragTarget.alpha = 1;
+          sceneThis.dragTarget.zIndex = 0;
           sceneThis.checkPieceSnap(sceneThis.dragTarget);
         }
 
