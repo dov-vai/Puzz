@@ -229,17 +229,73 @@ export class JigsawGenerator {
     return pieces;
   }
 
-  placePieces(container: PIXI.Container, pieces: JigsawPiece[]) {
+  private rectangularSpiral(
+    numObjects: number,
+    stepSize: number,
+    x: number = 0,
+    y: number = 0,
+    stepsX: number = 1,
+    stepsY: number = 1
+  ) {
+    let positions = [];
+
+    let directions = [
+      {x: stepSize, y: 0},  // Right
+      {x: 0, y: stepSize},  // Down
+      {x: -stepSize, y: 0}, // Left
+      {x: 0, y: -stepSize} // Up
+    ];
+
+    let directionIndex = 0;
+    let steps = stepsX;
+    while (positions.length < numObjects) {
+      for (let i = 0; i < steps; i++) {
+        if (positions.length >= numObjects) break;
+        positions.push({x: x, y: y});
+        x += directions[directionIndex].x;
+        y += directions[directionIndex].y;
+      }
+
+      steps = directionIndex % 2 === 0 ? stepsY : stepsX;
+
+      directionIndex = (directionIndex + 1) % 4;
+
+      if (directionIndex % 2 === 0) {
+        stepsX++;
+        stepsY++;
+        steps++;
+      }
+    }
+
+    return positions;
+  }
+
+  private shuffle(pieces: JigsawPiece[]) {
+    for (let i = pieces.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [pieces[i], pieces[j]] = [pieces[j], pieces[i]];
+    }
+  }
+
+  placePieces(container: PIXI.Container, pieces: JigsawPiece[], position: PIXI.Point) {
+    const shuffledPieces = [...pieces];
+    this.shuffle(shuffledPieces);
+    const startPoint = new PIXI.Point(
+      position.x - this.texture.width,
+      position.y - this.texture.height,
+    );
     const columns = Math.ceil(this.texture.width / this.tileWidth);
     const rows = Math.ceil(this.texture.height / this.tileWidth);
+    const positions = this.rectangularSpiral(columns * rows, this.tileWidth + 50, startPoint.x, startPoint.y, columns, rows);
     for (let y = 0; y < rows; y++) {
       for (let x = 0; x < columns; x++) {
-        const piece = pieces[y * columns + x];
+        const id = y * columns + x;
+        const piece = shuffledPieces[id];
+        const position = positions[id];
         piece.resetPivot();
-        piece.position.set(x * this.tileWidth, y * this.tileWidth);
+        piece.position.set(position.x, position.y);
         container.addChild(piece);
       }
     }
   }
-
 }

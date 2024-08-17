@@ -56,7 +56,7 @@ export class JigsawScene extends PIXI.Container implements IScene {
     this.taggedPieces = generator.generatePieces(5, 0x000000, SceneManager.appRenderer);
     // setup dragging and dropping jigsaw pieces
     this.setupEvents();
-    generator.placePieces(this.worldContainer, this.taggedPieces);
+    generator.placePieces(this.worldContainer, this.taggedPieces, new PIXI.Point(this.world.width / 2, this.world.height / 2));
   }
 
   private setupP2P() {
