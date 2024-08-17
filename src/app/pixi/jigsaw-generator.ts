@@ -11,10 +11,12 @@ export interface Shape {
 export class JigsawGenerator {
   private texture: PIXI.Texture;
   private tileWidth: number;
+  private random: () => number;
 
-  constructor(texture: PIXI.Texture, tileWidth: number) {
+  constructor(texture: PIXI.Texture, tileWidth: number, seed: number) {
     this.texture = texture;
     this.tileWidth = tileWidth;
+    this.random = this.splitMix32(seed);
   }
 
   public getMask(
@@ -129,14 +131,11 @@ export class JigsawGenerator {
     }
   }
 
-  private getRandomTabValue(random: () => number): number {
-    return random() > 0.5 ? 1 : -1;
+  private getRandomTabValue(): number {
+    return this.random() > 0.5 ? 1 : -1;
   }
 
   getRandomShapes(columns: number, rows: number): Shape[] {
-    // TODO: seed generation
-    const random = this.splitMix32(1970827786);
-
     const shapeArray: Shape[] = new Array(columns * rows);
 
     // Initialize shapes with undefined tab values and edge constraints
@@ -165,14 +164,14 @@ export class JigsawGenerator {
         const shapeBottom = y < rows - 1 ? shapeArray[(y + 1) * columns + x] : undefined;
 
         if (x < columns - 1) {
-          shape.rightTab = this.getRandomTabValue(random);
+          shape.rightTab = this.getRandomTabValue();
           if (shapeRight) {
             shapeRight.leftTab = -shape.rightTab;
           }
         }
 
         if (y < rows - 1) {
-          shape.bottomTab = this.getRandomTabValue(random);
+          shape.bottomTab = this.getRandomTabValue();
           if (shapeBottom) {
             shapeBottom.topTab = -shape.bottomTab;
           }

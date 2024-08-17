@@ -24,6 +24,7 @@ export class JigsawScene extends PIXI.Container implements IScene {
   private tileWidth!: number;
   private dragTarget: JigsawPiece | null;
   private image: PIXI.Texture | undefined;
+  private seed: number | undefined;
 
   constructor(private peerManager: PeerManagerService) {
     super();
@@ -44,15 +45,16 @@ export class JigsawScene extends PIXI.Container implements IScene {
 
     // we are the host so can load immediately
     if (this.image) {
-      this.loadPieces(this.image);
+      this.seed = (Math.random() * 2 ** 32) >>> 0;
+      this.loadPieces(this.image, this.seed);
     }
 
     this.addChild(this.worldContainer);
   }
 
-  private loadPieces(image: PIXI.Texture) {
+  private loadPieces(image: PIXI.Texture, seed: number) {
     this.tileWidth = 100;
-    const generator = new JigsawGenerator(image, this.tileWidth);
+    const generator = new JigsawGenerator(image, this.tileWidth, seed);
     this.taggedPieces = generator.generatePieces(5, 0x000000, SceneManager.appRenderer);
     // setup dragging and dropping jigsaw pieces
     this.setupEvents();
@@ -128,6 +130,9 @@ export class JigsawScene extends PIXI.Container implements IScene {
               fileReceive.decode(decoder);
               imageBuffer = new Uint8Array(fileReceive.size);
               bufferOffset = 0;
+              if (fileReceive.extra != undefined) {
+                this.seed = fileReceive.extra;
+              }
               break;
             }
             case MessageType.FileChunk: {
@@ -143,7 +148,7 @@ export class JigsawScene extends PIXI.Container implements IScene {
               if (bufferOffset === imageBuffer.length) {
                 const decoder = new MessageDecoder(imageBuffer.buffer);
                 PIXI.Assets.load(decoder.decodeString(bufferOffset)).then((texture: PIXI.Texture) => {
-                  this.loadPieces(texture);
+                  this.loadPieces(texture, this.seed!);
                   const encoder = new MessageEncoder();
                   const syncRequest = new SyncRequestMessage();
                   syncRequest.encode(encoder);
@@ -159,8 +164,8 @@ export class JigsawScene extends PIXI.Container implements IScene {
 
               const encoder = new MessageEncoder();
               const buffer = this.convertStringToBinary(this.image?.source._sourceOrigin!);
-              const fileReceive = new FileReceiveMessage("image", buffer.byteLength);
-              fileReceive.encode(encoder);
+              const imageReceive = new FileReceiveMessage("image", buffer.byteLength, "", this.seed);
+              imageReceive.encode(encoder);
               channel.send(encoder.getBuffer());
 
               // TODO: expensive operation, should be async
