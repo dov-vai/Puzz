@@ -1,6 +1,6 @@
 <div class="game-container">
   <div class="game-gui">
-    <button class="button is-primary" [routerLink]="['']">Back</button>
+    <button class="button is-primary" [routerLink]="['']" (click)="onBack()">Back</button>
   </div>
   <canvas width="1136" height="640" #gameCanvas></canvas>
 </div>

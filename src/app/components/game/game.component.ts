@@ -12,6 +12,7 @@ import {
 } from '@angular/core';
 import {GameService} from "../../services/game/game.service";
 import {Router, RouterLink} from "@angular/router";
+import {WebSocketService} from "../../services/web-socket/web-socket.service";
 
 export interface GameExtras {
   image?: File;
@@ -31,6 +32,7 @@ export class GameComponent implements OnInit, AfterViewInit, OnDestroy {
   game = inject(GameService);
   ngZone = inject(NgZone);
   renderer = inject(Renderer2);
+  websocket = inject(WebSocketService);
   extras?: GameExtras;
 
   constructor(private router: Router) {
@@ -51,6 +53,10 @@ export class GameComponent implements OnInit, AfterViewInit, OnDestroy {
         await this.game.init(this.gameCanvas.nativeElement, this.extras?.image);
       })();
     });
+  }
+
+  onBack(){
+    this.websocket.sendMessage({Type:"disconnect"});
   }
 
   ngOnDestroy() {
