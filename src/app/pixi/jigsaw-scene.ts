@@ -25,6 +25,8 @@ export class JigsawScene extends PIXI.Container implements IScene {
   private dragTarget: JigsawPiece | null;
   private image: PIXI.Texture | undefined;
   private seed: number | undefined;
+  private imageBuffer!: Uint8Array;
+  private bufferOffset!: number;
 
   constructor(private peerManager: PeerManagerService) {
     super();
@@ -95,187 +97,40 @@ export class JigsawScene extends PIXI.Container implements IScene {
           const type = decoder.decodeUint8();
           switch (type) {
             case MessageType.Cursor: {
-              const cursor = new CursorMessage();
-              cursor.decode(decoder);
-              const cursorPosition = new PIXI.Point(cursor.x, cursor.y);
-              peerCursor.position.copyFrom(cursorPosition);
-              if (cursor.piece != undefined) {
-                let target: JigsawPiece | PIXI.Container = this.taggedPieces[cursor.piece];
-                if (target.parent != this.worldContainer) {
-                  target = target.parent;
-                }
-                const pivotCoords = target.toLocal(cursorPosition, this.world);
-                if (lastPickedPiece != cursor.piece) {
-                  // TODO: more foolproof pivot setting?
-                  target.zIndex = 1;
-                  target.pivot.copyFrom(pivotCoords);
-                }
-                target.position.copyFrom(cursorPosition);
-                lastPickedPiece = cursor.piece;
-              } else {
-                if (lastPickedPiece != -1) {
-                  let target: JigsawPiece | PIXI.Container = this.taggedPieces[lastPickedPiece];
-                  if (target.parent != this.worldContainer) {
-                    target = target.parent;
-                  }
-                  target.zIndex = 0;
-                }
-
-                lastPickedPiece = -1;
-              }
-              peerCursor.scale.x = 1 / this.worldContainer.scale.x;
-              peerCursor.scale.y = 1 / this.worldContainer.scale.y;
+              lastPickedPiece = this.handleCursorMessage(decoder, peerCursor, lastPickedPiece);
               break;
             }
             case MessageType.FileReceive: {
-              const fileReceive = new FileReceiveMessage();
-              fileReceive.decode(decoder);
-              imageBuffer = new Uint8Array(fileReceive.size);
-              bufferOffset = 0;
-              if (fileReceive.extra != undefined) {
-                this.seed = fileReceive.extra;
-              }
+              this.handleFileReceiveMessage(decoder);
               break;
             }
             case MessageType.FileChunk: {
-              if (bufferOffset === imageBuffer.length) {
+              if (this.bufferOffset === this.imageBuffer.length) {
                 break;
               }
-
-              const fileChunk = new FileChunkMessage();
-              fileChunk.decode(decoder);
-              imageBuffer.set(new Uint8Array(fileChunk.buffer!), bufferOffset);
-              bufferOffset += fileChunk.buffer!.byteLength;
-
-              if (bufferOffset === imageBuffer.length) {
-                const decoder = new MessageDecoder(imageBuffer.buffer);
-                PIXI.Assets.load(decoder.decodeString(bufferOffset)).then((texture: PIXI.Texture) => {
-                  this.loadPieces(texture, this.seed!);
-                  const encoder = new MessageEncoder();
-                  const syncRequest = new SyncRequestMessage();
-                  syncRequest.encode(encoder);
-                  this.peerManager.broadcastMessage(encoder.getBuffer())
-                })
-              }
+              this.handleFileChunkMessage(decoder);
               break;
             }
             case MessageType.ImageRequest: {
               if (!this.peerManager.host) {
                 break;
               }
-
-              const encoder = new MessageEncoder();
-              const buffer = this.convertStringToBinary(this.image?.source._sourceOrigin!);
-              const imageReceive = new FileReceiveMessage("image", buffer.byteLength, "", this.seed);
-              imageReceive.encode(encoder);
-              channel.send(encoder.getBuffer());
-
-              // TODO: expensive operation, should be async
-              const chunkSize = 15 * 1024;
-              let size = 0;
-              while (size < buffer.byteLength) {
-                const encoder = new MessageEncoder();
-                const end = Math.min(chunkSize, buffer.byteLength - size);
-                const fileChunk = new FileChunkMessage(buffer.slice(size, size + end), end);
-                fileChunk.encode(encoder);
-                channel.send(encoder.getBuffer());
-                size += end;
-              }
+              this.handleImageRequestMessage(channel);
               break;
             }
             case MessageType.Snap: {
-              const snap = new SnapMessage();
-              snap.decode(decoder);
-              this.handlePieceSnap(this.taggedPieces[snap.pieceId], this.taggedPieces[snap.pieceId].neighbours[snap.neighbourId])
+              this.handleSnapMessage(decoder);
               break;
             }
             case MessageType.SyncRequest: {
               if (!this.peerManager.host) {
                 break;
               }
-
-              const pieces: SyncPiece[] = [];
-              const containers: SyncContainer[] = [];
-
-              const checkedPieces: Set<number> = new Set();
-              for (let piece of this.taggedPieces) {
-                if (checkedPieces.has(piece.id)) {
-                  continue;
-                }
-
-                if (piece.parent != this.worldContainer) {
-                  const syncContainer: SyncContainer = {
-                    x: piece.parent.x,
-                    y: piece.parent.y,
-                    pivotPiece: -1,
-                    pivotX: -1,
-                    pivotY: -1,
-                    pieceIds: []
-                  }
-
-                  for (let containerPiece of piece.parent?.children) {
-                    if (containerPiece instanceof JigsawPiece) {
-                      if (syncContainer.pivotPiece == -1) {
-                        const pivotPoint = containerPiece.toLocal(piece.parent?.pivot, piece.parent);
-                        if (containerPiece.containsPoint(pivotPoint)) {
-                          syncContainer.pivotPiece = containerPiece.id;
-                          syncContainer.pivotX = pivotPoint.x;
-                          syncContainer.pivotY = pivotPoint.y;
-                        }
-                      }
-                      syncContainer.pieceIds.push(containerPiece.id);
-                      checkedPieces.add(containerPiece.id);
-                    }
-                  }
-                  containers.push(syncContainer);
-                } else {
-                  const syncPiece: SyncPiece = {
-                    id: piece.id,
-                    x: piece.x,
-                    y: piece.y,
-                    pivotX: piece.pivot.x,
-                    pivotY: piece.pivot.y
-                  }
-                  checkedPieces.add(piece.id);
-                  pieces.push(syncPiece);
-                }
-              }
-              const encoder = new MessageEncoder();
-              const sync = new SyncMessage(pieces, containers);
-              sync.encode(encoder);
-              channel.send(encoder.getBuffer());
+              this.handleSyncRequestMessage(channel);
               break;
             }
             case MessageType.Sync: {
-              const sync = new SyncMessage();
-              sync.decode(decoder);
-
-              for (let syncPiece of sync.pieces) {
-                const piece = this.taggedPieces[syncPiece.id];
-                piece.pivot.set(syncPiece.pivotX, syncPiece.pivotY);
-                piece.position.set(syncPiece.x, syncPiece.y);
-              }
-
-              for (let container of sync.containers) {
-                // hash set for faster neighbour lookup
-                const pieceSet = new Set(container.pieceIds);
-                for (let containerPiece of container.pieceIds) {
-                  const piece = this.taggedPieces[containerPiece];
-                  for (let neighbour of piece.neighbours) {
-                    if (pieceSet.has(neighbour.id)) {
-                      this.handlePieceSnap(piece, neighbour);
-                    }
-                  }
-                }
-                // pick the first one just to get the parent container
-                const piece = this.taggedPieces[container.pieceIds[0]];
-                const containerPivot = piece.parent?.toLocal(
-                  new PIXI.Point(container.pivotX, container.pivotY),
-                  this.taggedPieces[container.pivotPiece]
-                );
-                piece.parent?.pivot.copyFrom(containerPivot);
-                piece.parent.position.set(container.x, container.y);
-              }
+              this.handleSyncMessage(decoder);
               break;
             }
             default: {
@@ -297,6 +152,181 @@ export class JigsawScene extends PIXI.Container implements IScene {
         this.peerManager.broadcastMessage(encoder.getBuffer());
       }
     };
+  }
+
+  private handleSyncMessage(decoder: MessageDecoder) {
+    const sync = new SyncMessage();
+    sync.decode(decoder);
+
+    for (let syncPiece of sync.pieces) {
+      const piece = this.taggedPieces[syncPiece.id];
+      piece.pivot.set(syncPiece.pivotX, syncPiece.pivotY);
+      piece.position.set(syncPiece.x, syncPiece.y);
+    }
+
+    for (let container of sync.containers) {
+      // hash set for faster neighbour lookup
+      const pieceSet = new Set(container.pieceIds);
+      for (let containerPiece of container.pieceIds) {
+        const piece = this.taggedPieces[containerPiece];
+        for (let neighbour of piece.neighbours) {
+          if (pieceSet.has(neighbour.id)) {
+            this.handlePieceSnap(piece, neighbour);
+          }
+        }
+      }
+      // pick the first one just to get the parent container
+      const piece = this.taggedPieces[container.pieceIds[0]];
+      const containerPivot = piece.parent?.toLocal(
+        new PIXI.Point(container.pivotX, container.pivotY),
+        this.taggedPieces[container.pivotPiece]
+      );
+      piece.parent?.pivot.copyFrom(containerPivot);
+      piece.parent.position.set(container.x, container.y);
+    }
+  }
+
+  private handleSyncRequestMessage(channel: RTCDataChannel) {
+    const pieces: SyncPiece[] = [];
+    const containers: SyncContainer[] = [];
+
+    const checkedPieces: Set<number> = new Set();
+    for (let piece of this.taggedPieces) {
+      if (checkedPieces.has(piece.id)) {
+        continue;
+      }
+
+      if (piece.parent != this.worldContainer) {
+        const syncContainer: SyncContainer = {
+          x: piece.parent.x,
+          y: piece.parent.y,
+          pivotPiece: -1,
+          pivotX: -1,
+          pivotY: -1,
+          pieceIds: []
+        }
+
+        for (let containerPiece of piece.parent?.children) {
+          if (containerPiece instanceof JigsawPiece) {
+            if (syncContainer.pivotPiece == -1) {
+              const pivotPoint = containerPiece.toLocal(piece.parent?.pivot, piece.parent);
+              if (containerPiece.containsPoint(pivotPoint)) {
+                syncContainer.pivotPiece = containerPiece.id;
+                syncContainer.pivotX = pivotPoint.x;
+                syncContainer.pivotY = pivotPoint.y;
+              }
+            }
+            syncContainer.pieceIds.push(containerPiece.id);
+            checkedPieces.add(containerPiece.id);
+          }
+        }
+        containers.push(syncContainer);
+      } else {
+        const syncPiece: SyncPiece = {
+          id: piece.id,
+          x: piece.x,
+          y: piece.y,
+          pivotX: piece.pivot.x,
+          pivotY: piece.pivot.y
+        }
+        checkedPieces.add(piece.id);
+        pieces.push(syncPiece);
+      }
+    }
+    const encoder = new MessageEncoder();
+    const sync = new SyncMessage(pieces, containers);
+    sync.encode(encoder);
+    channel.send(encoder.getBuffer());
+  }
+
+  private handleSnapMessage(decoder: MessageDecoder) {
+    const snap = new SnapMessage();
+    snap.decode(decoder);
+    this.handlePieceSnap(this.taggedPieces[snap.pieceId], this.taggedPieces[snap.pieceId].neighbours[snap.neighbourId])
+  }
+
+  private handleImageRequestMessage(channel: RTCDataChannel) {
+    const encoder = new MessageEncoder();
+    const buffer = this.convertStringToBinary(this.image?.source._sourceOrigin!);
+    const imageReceive = new FileReceiveMessage("image", buffer.byteLength, "", this.seed);
+    imageReceive.encode(encoder);
+    channel.send(encoder.getBuffer());
+
+    // TODO: expensive operation, should be async
+    const chunkSize = 15 * 1024;
+    let size = 0;
+    while (size < buffer.byteLength) {
+      const encoder = new MessageEncoder();
+      const end = Math.min(chunkSize, buffer.byteLength - size);
+      const fileChunk = new FileChunkMessage(buffer.slice(size, size + end), end);
+      fileChunk.encode(encoder);
+      channel.send(encoder.getBuffer());
+      size += end;
+    }
+  }
+
+  private handleFileChunkMessage(decoder: MessageDecoder) {
+    const fileChunk = new FileChunkMessage();
+    fileChunk.decode(decoder);
+    this.imageBuffer.set(new Uint8Array(fileChunk.buffer!), this.bufferOffset);
+    this.bufferOffset += fileChunk.buffer!.byteLength;
+
+    if (this.bufferOffset === this.imageBuffer.length) {
+      const decoder = new MessageDecoder(this.imageBuffer.buffer);
+      PIXI.Assets.load(decoder.decodeString(this.bufferOffset)).then((texture: PIXI.Texture) => {
+        this.loadPieces(texture, this.seed!);
+        const encoder = new MessageEncoder();
+        const syncRequest = new SyncRequestMessage();
+        syncRequest.encode(encoder);
+        this.peerManager.broadcastMessage(encoder.getBuffer())
+      })
+    }
+  }
+
+  private handleFileReceiveMessage(decoder: MessageDecoder) {
+    const fileReceive = new FileReceiveMessage();
+    fileReceive.decode(decoder);
+    this.imageBuffer = new Uint8Array(fileReceive.size);
+    this.bufferOffset = 0;
+    if (fileReceive.extra != undefined) {
+      this.seed = fileReceive.extra;
+    }
+  }
+
+  private handleCursorMessage(decoder: MessageDecoder, peerCursor: PIXI.Graphics, lastPickedPiece: number) {
+    const cursor = new CursorMessage();
+    cursor.decode(decoder);
+    const cursorPosition = new PIXI.Point(cursor.x, cursor.y);
+    peerCursor.position.copyFrom(cursorPosition);
+    if (cursor.piece != undefined) {
+      let target: JigsawPiece | PIXI.Container = this.taggedPieces[cursor.piece];
+      if (target.parent != this.worldContainer) {
+        target = target.parent;
+      }
+      const pivotCoords = target.toLocal(cursorPosition, this.world);
+      if (lastPickedPiece != cursor.piece) {
+        // TODO: more foolproof pivot setting?
+        target.zIndex = 1;
+        target.pivot.copyFrom(pivotCoords);
+      }
+      target.position.copyFrom(cursorPosition);
+      lastPickedPiece = cursor.piece;
+    } else {
+      if (lastPickedPiece != -1) {
+        let target: JigsawPiece | PIXI.Container = this.taggedPieces[lastPickedPiece];
+        if (target.parent != this.worldContainer) {
+          target = target.parent;
+        }
+        target.zIndex = 0;
+      }
+
+      lastPickedPiece = -1;
+    }
+    peerCursor.scale.x = 1 / this.worldContainer.scale.x;
+    peerCursor.scale.y = 1 / this.worldContainer.scale.y;
+
+    // TODO: get rid of this
+    return lastPickedPiece;
   }
 
   private convertStringToBinary(value: string) {
