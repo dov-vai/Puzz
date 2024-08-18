@@ -35,6 +35,8 @@ export class JigsawScene extends PIXI.Container implements IScene {
     const worldSize = 5000;
     this.worldContainer = new InfinityCanvas(SceneManager.appRenderer.events, worldSize, worldSize);
     this.worldContainer.sortableChildren = true;
+    // center world
+    this.worldContainer.setWorldPosition(SceneManager.width / 2 - worldSize / 2, SceneManager.height / 2 - worldSize / 2);
     this.world = new PIXI.Graphics().rect(0, 0, worldSize, worldSize).fill({color: 0x424769});
     this.worldContainer.addChild(this.world);
 
