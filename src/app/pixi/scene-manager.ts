@@ -93,6 +93,12 @@ export class SceneManager {
   public static destroy() {
     if (SceneManager.app) {
       SceneManager.app.destroy();
+      // bug with pixi when clearing cache?
+      // https://github.com/pixijs/pixijs/issues/10069
+
+      // un-initializes the whole assets object
+      // drastic for this but necessary as resetting just the cache doesn't work
+      PIXI.Assets.reset();
     }
   }
 }
