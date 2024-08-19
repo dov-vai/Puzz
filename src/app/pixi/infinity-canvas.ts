@@ -32,6 +32,8 @@ export class InfinityCanvas extends PIXI.Container {
     eventElement.addEventListener('pointermove', this.panEvent.bind(this));
     eventElement.addEventListener('pointerup', this.pointerUpEvent.bind(this));
     eventElement.addEventListener('pointerleave', this.pointerUpEvent.bind(this));
+    eventElement.addEventListener('touchstart', this.onTouchStart.bind(this));
+    eventElement.addEventListener('touchmove', this.onTouchMove.bind(this));
   }
 
   pause() {
