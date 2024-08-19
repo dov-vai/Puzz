@@ -5,7 +5,7 @@ export class InfinityCanvas extends PIXI.Container {
   private events: EventSystem;
   private worldWidth: number;
   private worldHeight: number;
-  public dragging: boolean;
+  private dragging: boolean;
   private dragStart: PIXI.Point;
   private paused: boolean;
 
@@ -24,7 +24,7 @@ export class InfinityCanvas extends PIXI.Container {
   private setupEvents() {
     const eventElement = this.events.domElement;
     eventElement.addEventListener('wheel', this.zoomEvent.bind(this));
-    eventElement.addEventListener('pointerdown', this.dragStartEvent.bind(this));
+    eventElement.addEventListener('contextmenu', this.dragStartEvent.bind(this));
     eventElement.addEventListener('pointermove', this.panEvent.bind(this));
     eventElement.addEventListener('pointerup', this.pointerUpEvent.bind(this));
     eventElement.addEventListener('pointerleave', this.pointerUpEvent.bind(this));
@@ -68,6 +68,9 @@ export class InfinityCanvas extends PIXI.Container {
   }
 
   private dragStartEvent(event: PointerEvent) {
+  private dragStartEvent(event: MouseEvent) {
+    event.preventDefault();
+
     if (this.paused) {
       return;
     }

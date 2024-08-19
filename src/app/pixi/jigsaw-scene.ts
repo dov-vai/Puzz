@@ -343,6 +343,10 @@ export class JigsawScene extends PIXI.Container implements IScene {
     this.worldContainer.hitArea = this.world.boundsArea;
 
     function onDragStart(this: JigsawPiece, event: PIXI.FederatedPointerEvent) {
+      // check for right mouse click and ignore it (for panning)
+      if (event.nativeEvent instanceof MouseEvent && event.nativeEvent.button === 2) {
+        return;
+      }
       sceneThis.worldContainer.pause();
       let target: PIXI.Sprite | PIXI.Container = this;
       if (this.parent != sceneThis.worldContainer) {
