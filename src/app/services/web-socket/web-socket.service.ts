@@ -2,8 +2,9 @@ import {Injectable} from '@angular/core';
 import {WebSocketSubject} from "rxjs/internal/observable/dom/WebSocketSubject";
 import {webSocket} from "rxjs/webSocket";
 import {catchError, EMPTY, Subject, tap} from "rxjs";
+import {environment} from "../../../environments/environment";
 
-export const WEBSOCKET_URL = "ws://localhost:5048/ws";
+export const WEBSOCKET_URL = environment.webSocketUrl;
 
 // implemented according to:
 // https://javascript-conference.com/blog/real-time-in-angular-a-journey-into-websocket-and-rxjs/
