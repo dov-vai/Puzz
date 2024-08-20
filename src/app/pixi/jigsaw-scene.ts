@@ -75,6 +75,8 @@ export class JigsawScene extends PIXI.Container implements IScene {
     let bufferOffset: number;
 
     this.peerManager.onDataChannelOpen = (channel) => {
+      channel.binaryType = "arraybuffer";
+
       let lastPickedPiece: number = -1;
 
       const peerCursor = this.worldContainer.addChild(
