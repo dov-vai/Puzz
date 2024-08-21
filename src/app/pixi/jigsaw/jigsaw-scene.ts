@@ -1,20 +1,20 @@
-import {IScene, SceneManager} from "./scene-manager";
+import {IScene, SceneManager} from "../scene-manager";
 import * as PIXI from "pixi.js";
-import {InfinityCanvas} from "./infinity-canvas";
+import {InfinityCanvas} from "../infinity-canvas";
 import {JigsawGenerator} from "./jigsaw-generator";
-import {PixiUtils} from "./utils";
-import {PeerManagerService} from "../services/peer-manager/peer-manager.service";
-import {MessageEncoder} from "../network/message-encoder";
-import {MessageDecoder} from "../network/message-decoder";
-import {MessageType} from "../network/common";
-import {CursorMessage} from "../network/protocol/cursor-message";
+import {PixiUtils} from "../utils";
+import {PeerManagerService} from "../../services/peer-manager/peer-manager.service";
+import {MessageEncoder} from "../../network/message-encoder";
+import {MessageDecoder} from "../../network/message-decoder";
+import {MessageType} from "../../network/common";
+import {CursorMessage} from "../../network/protocol/cursor-message";
 import {JigsawNeighbour, JigsawPiece} from "./jigsaw-piece";
-import {ImageRequestMessage} from "../network/protocol/image-request-message";
-import {FileReceiveMessage} from "../network/protocol/file-receive-message";
-import {FileChunkMessage} from "../network/protocol/file-chunk-message";
-import {SnapMessage} from "../network/protocol/snap-message";
-import {SyncContainer, SyncMessage, SyncPiece} from "../network/protocol/sync-message";
-import {SyncRequestMessage} from "../network/protocol/sync-request-message";
+import {ImageRequestMessage} from "../../network/protocol/image-request-message";
+import {FileReceiveMessage} from "../../network/protocol/file-receive-message";
+import {FileChunkMessage} from "../../network/protocol/file-chunk-message";
+import {SnapMessage} from "../../network/protocol/snap-message";
+import {SyncContainer, SyncMessage, SyncPiece} from "../../network/protocol/sync-message";
+import {SyncRequestMessage} from "../../network/protocol/sync-request-message";
 
 export class JigsawScene extends PIXI.Container implements IScene {
   private worldContainer: InfinityCanvas;
