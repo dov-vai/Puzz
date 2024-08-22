@@ -59,51 +59,71 @@ export class PeerManagerService {
   private async handleMessage(data: any) {
     switch (data.Type) {
       case "p2pInit": {
-        this.myId = data.SocketId;
-        this._host = data.Host;
-        console.log("my socketid is:", this.myId);
+        this.handleP2pInit(data);
         break;
       }
       case "receiveInit": {
-        let socketId = data.SocketId;
-        await this.addPeer(socketId, false);
-        this.socket.sendMessage({Type: "sendInit", SocketId: socketId});
+        await this.handleReceiveInit(data);
         break;
       }
       case "sendInit": {
-        let socketId = data.SocketId;
-        await this.addPeer(socketId, true);
+        await this.handleSendInit(data);
         break;
       }
       case "signal": {
-        let id = data.SocketId;
-        let signalData = JSON.parse(data.Signal);
-        let peer = this.peers.get(id)?.peer;
-        if (peer) {
-          if (signalData.sdp) {
-            await peer.setRemoteDescription(new RTCSessionDescription(signalData));
-            if (signalData.type === "offer") {
-              const answer = await peer.createAnswer();
-              await peer.setLocalDescription(answer);
-              let signal = {
-                Type: "signal",
-                Signal: JSON.stringify(peer.localDescription),
-                SocketId: id
-              };
-              this.socket.sendMessage(signal);
-            }
-          } else if (signalData.candidate) {
-            await peer.addIceCandidate(new RTCIceCandidate(signalData));
-          }
-        }
+        await this.handleSignal(data);
         break;
       }
       case "removePeer": {
-        let socketId = data.SocketId;
-        this.removePeer(socketId);
+        this.handleRemovePeer(data);
         break;
       }
     }
+  }
+
+  private handleRemovePeer(data: any) {
+    let socketId = data.SocketId;
+    this.removePeer(socketId);
+  }
+
+  private async handleSignal(data: any) {
+    let id = data.SocketId;
+    let signalData = JSON.parse(data.Signal);
+    let peer = this.peers.get(id)?.peer;
+    if (peer) {
+      if (signalData.sdp) {
+        await peer.setRemoteDescription(new RTCSessionDescription(signalData));
+        if (signalData.type === "offer") {
+          const answer = await peer.createAnswer();
+          await peer.setLocalDescription(answer);
+          let signal = {
+            Type: "signal",
+            Signal: JSON.stringify(peer.localDescription),
+            SocketId: id
+          };
+          this.socket.sendMessage(signal);
+        }
+      } else if (signalData.candidate) {
+        await peer.addIceCandidate(new RTCIceCandidate(signalData));
+      }
+    }
+  }
+
+  private async handleSendInit(data: any) {
+    let socketId = data.SocketId;
+    await this.addPeer(socketId, true);
+  }
+
+  private async handleReceiveInit(data: any) {
+    let socketId = data.SocketId;
+    await this.addPeer(socketId, false);
+    this.socket.sendMessage({Type: "sendInit", SocketId: socketId});
+  }
+
+  private handleP2pInit(data: any) {
+    this.myId = data.SocketId;
+    this._host = data.Host;
+    console.log("my socketid is:", this.myId);
   }
 
   private async addPeer(id: string, initiator: boolean) {
