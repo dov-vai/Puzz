@@ -1,13 +1,16 @@
 import {Injectable} from '@angular/core';
 import {WebSocketService} from "../web-socket/web-socket.service";
 import {Subscription, tap} from "rxjs";
+import {Peer} from "./peer";
+import {P2PInit, ReceiveInit, RemovePeer, SendInit, Signal, Types} from "./types";
 
-class Peer {
+class ManagedPeer {
   peer: RTCPeerConnection;
-  dataChannel!: RTCDataChannel;
+  dataChannel?: RTCDataChannel;
 
-  constructor(peer: RTCPeerConnection) {
+  constructor(peer: RTCPeerConnection, channel?: RTCDataChannel) {
     this.peer = peer;
+    this.dataChannel = channel;
   }
 }
 
@@ -15,7 +18,7 @@ class Peer {
   providedIn: 'root'
 })
 export class PeerManagerService {
-  private peers!: Map<string, Peer>;
+  private peers!: Map<string, ManagedPeer>;
   private myId!: string;
   private subscription!: Subscription;
   private _host!: boolean;
@@ -24,14 +27,14 @@ export class PeerManagerService {
     return this._host;
   }
 
-  onDataChannelOpen: (channel: RTCDataChannel) => void = () => {
+  onDataChannelOpen: (peer: Peer) => void = () => {
   };
 
   constructor(private socket: WebSocketService) {
   }
 
   public async init() {
-    this.peers = new Map<string, Peer>();
+    this.peers = new Map<string, ManagedPeer>();
     this.myId = "";
     this._host = false;
     this.subscription = this.socket.messages$.pipe(
@@ -58,35 +61,35 @@ export class PeerManagerService {
 
   private async handleMessage(data: any) {
     switch (data.Type) {
-      case "p2pInit": {
+      case Types.P2PInit: {
         this.handleP2pInit(data);
         break;
       }
-      case "receiveInit": {
+      case Types.ReceiveInit: {
         await this.handleReceiveInit(data);
         break;
       }
-      case "sendInit": {
+      case Types.SendInit: {
         await this.handleSendInit(data);
         break;
       }
-      case "signal": {
+      case Types.Signal: {
         await this.handleSignal(data);
         break;
       }
-      case "removePeer": {
+      case Types.RemovePeer: {
         this.handleRemovePeer(data);
         break;
       }
     }
   }
 
-  private handleRemovePeer(data: any) {
-    let socketId = data.SocketId;
+  private handleRemovePeer(data: RemovePeer) {
+    const socketId = data.SocketId;
     this.removePeer(socketId);
   }
 
-  private async handleSignal(data: any) {
+  private async handleSignal(data: Signal) {
     let id = data.SocketId;
     let signalData = JSON.parse(data.Signal);
     let peer = this.peers.get(id)?.peer;
@@ -96,7 +99,7 @@ export class PeerManagerService {
         if (signalData.type === "offer") {
           const answer = await peer.createAnswer();
           await peer.setLocalDescription(answer);
-          let signal = {
+          const signal: Signal = {
             Type: "signal",
             Signal: JSON.stringify(peer.localDescription),
             SocketId: id
@@ -109,18 +112,19 @@ export class PeerManagerService {
     }
   }
 
-  private async handleSendInit(data: any) {
-    let socketId = data.SocketId;
+  private async handleSendInit(data: SendInit) {
+    const socketId = data.SocketId;
     await this.addPeer(socketId, true);
   }
 
-  private async handleReceiveInit(data: any) {
-    let socketId = data.SocketId;
+  private async handleReceiveInit(data: ReceiveInit) {
+    const socketId = data.SocketId;
     await this.addPeer(socketId, false);
-    this.socket.sendMessage({Type: "sendInit", SocketId: socketId});
+    const sendInit: SendInit = {Type: "sendInit", SocketId: socketId};
+    this.socket.sendMessage(sendInit);
   }
 
-  private handleP2pInit(data: any) {
+  private handleP2pInit(data: P2PInit) {
     this.myId = data.SocketId;
     this._host = data.Host;
     console.log("my socketid is:", this.myId);
@@ -133,7 +137,7 @@ export class PeerManagerService {
       ]
     });
 
-    this.peers.set(id, new Peer(peer))
+    this.peers.set(id, new ManagedPeer(peer))
 
     if (initiator) {
       const dataChannel = peer.createDataChannel("dataChannel");
@@ -142,7 +146,7 @@ export class PeerManagerService {
       const offer = await peer.createOffer();
       await peer.setLocalDescription(offer);
 
-      let signal = {Type: "signal", Signal: JSON.stringify(peer.localDescription), SocketId: id};
+      const signal: Signal = {Type: "signal", Signal: JSON.stringify(peer.localDescription), SocketId: id};
       this.socket.sendMessage(signal);
     } else {
       peer.ondatachannel = (event) => {
@@ -152,7 +156,7 @@ export class PeerManagerService {
 
     peer.onicecandidate = (event) => {
       if (event.candidate) {
-        let signal = {Type: "signal", Signal: JSON.stringify(event.candidate), SocketId: id};
+        const signal: Signal = {Type: "signal", Signal: JSON.stringify(event.candidate), SocketId: id};
         this.socket.sendMessage(signal);
       }
     };
@@ -165,11 +169,12 @@ export class PeerManagerService {
   }
 
   private setupDataChannel(id: string, dataChannel: RTCDataChannel) {
+    const peer = this.peers.get(id)!;
     dataChannel.onopen = () => {
-      this.onDataChannelOpen(dataChannel);
+      this.onDataChannelOpen(new Peer(id, peer.peer, dataChannel));
     };
     // should be initialized before the whole function is called
-    this.peers.get(id)!.dataChannel = dataChannel;
+    peer.dataChannel = dataChannel;
   }
 
   removePeer(id: string) {
@@ -189,6 +194,14 @@ export class PeerManagerService {
           peer.dataChannel.send(message);
         }
       }
+    }
+  }
+
+  sendMessage(id: string, message: string | ArrayBuffer) {
+    if (typeof message === "string") {
+      this.peers.get(id)?.dataChannel?.send(message);
+    } else if (message instanceof ArrayBuffer) {
+      this.peers.get(id)?.dataChannel?.send(message);
     }
   }
 }

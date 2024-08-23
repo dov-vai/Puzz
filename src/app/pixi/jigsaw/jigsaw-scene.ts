@@ -15,6 +15,7 @@ import {FileChunkMessage} from "../../network/protocol/file-chunk-message";
 import {SnapMessage} from "../../network/protocol/snap-message";
 import {SyncContainer, SyncMessage, SyncPiece} from "../../network/protocol/sync-message";
 import {SyncRequestMessage} from "../../network/protocol/sync-request-message";
+import {Peer} from "../../services/peer-manager/peer";
 
 export class JigsawScene extends PIXI.Container implements IScene {
   private worldContainer: InfinityCanvas;
@@ -35,7 +36,7 @@ export class JigsawScene extends PIXI.Container implements IScene {
 
     // setup the infinity canvas
     const worldSize = 5000;
-    this.worldContainer = new InfinityCanvas(SceneManager.appRenderer.events, worldSize, worldSize);
+    this.worldContainer = new InfinityCanvas(SceneManager.appRenderer.events);
     this.worldContainer.sortableChildren = true;
     // center world
     this.worldContainer.setWorldPosition(SceneManager.width / 2 - worldSize / 2, SceneManager.height / 2 - worldSize / 2);
@@ -71,11 +72,8 @@ export class JigsawScene extends PIXI.Container implements IScene {
       .fill({color: 0xffffff})
       .stroke({color: 0x111111, alpha: 0.87, width: 1})
 
-    let imageBuffer: Uint8Array;
-    let bufferOffset: number;
-
-    this.peerManager.onDataChannelOpen = (channel) => {
-      channel.binaryType = "arraybuffer";
+    this.peerManager.onDataChannelOpen = (peer) => {
+      peer.binaryType = "arraybuffer";
 
       let lastPickedPiece: number = -1;
 
@@ -84,18 +82,18 @@ export class JigsawScene extends PIXI.Container implements IScene {
       );
       peerCursor.zIndex = 2;
 
-      channel.onclose = () => {
+      peer.onClose = () => {
         this.worldContainer.removeChild(peerCursor);
       }
 
-      channel.onmessage = (event => {
-        if (typeof event.data === "string") {
-          console.log("got string?: ", event.data);
-        } else if (event.data instanceof ArrayBuffer) {
-          if (event.data.byteLength < 1) {
+      peer.onMessage = (message => {
+        if (typeof message === "string") {
+          console.log("got string?: ", message);
+        } else if (message instanceof ArrayBuffer) {
+          if (message.byteLength < 1) {
             return;
           }
-          const decoder = new MessageDecoder(event.data);
+          const decoder = new MessageDecoder(message);
           const type = decoder.decodeUint8();
           switch (type) {
             case MessageType.Cursor: {
@@ -117,7 +115,7 @@ export class JigsawScene extends PIXI.Container implements IScene {
               if (!this.peerManager.host) {
                 break;
               }
-              this.handleImageRequestMessage(channel);
+              this.handleImageRequestMessage(peer);
               break;
             }
             case MessageType.Snap: {
@@ -128,7 +126,7 @@ export class JigsawScene extends PIXI.Container implements IScene {
               if (!this.peerManager.host) {
                 break;
               }
-              this.handleSyncRequestMessage(channel);
+              this.handleSyncRequestMessage(peer);
               break;
             }
             case MessageType.Sync: {
@@ -188,7 +186,7 @@ export class JigsawScene extends PIXI.Container implements IScene {
     }
   }
 
-  private handleSyncRequestMessage(channel: RTCDataChannel) {
+  private handleSyncRequestMessage(peer: Peer) {
     const pieces: SyncPiece[] = [];
     const containers: SyncContainer[] = [];
 
@@ -238,7 +236,7 @@ export class JigsawScene extends PIXI.Container implements IScene {
     const encoder = new MessageEncoder();
     const sync = new SyncMessage(pieces, containers);
     sync.encode(encoder);
-    channel.send(encoder.getBuffer());
+    peer.sendMessage(encoder.getBuffer());
   }
 
   private handleSnapMessage(decoder: MessageDecoder) {
@@ -247,12 +245,12 @@ export class JigsawScene extends PIXI.Container implements IScene {
     this.handlePieceSnap(this.taggedPieces[snap.pieceId], this.taggedPieces[snap.pieceId].neighbours[snap.neighbourId])
   }
 
-  private handleImageRequestMessage(channel: RTCDataChannel) {
+  private handleImageRequestMessage(peer: Peer) {
     const encoder = new MessageEncoder();
     const buffer = this.convertStringToBinary(this.image?.source._sourceOrigin!);
     const imageReceive = new FileReceiveMessage("image", buffer.byteLength, "", this.seed);
     imageReceive.encode(encoder);
-    channel.send(encoder.getBuffer());
+    peer.sendMessage(encoder.getBuffer());
 
     // TODO: expensive operation, should be async
     const chunkSize = 15 * 1024;
@@ -262,7 +260,7 @@ export class JigsawScene extends PIXI.Container implements IScene {
       const end = Math.min(chunkSize, buffer.byteLength - size);
       const fileChunk = new FileChunkMessage(buffer.slice(size, size + end), end);
       fileChunk.encode(encoder);
-      channel.send(encoder.getBuffer());
+      peer.sendMessage(encoder.getBuffer());
       size += end;
     }
   }
