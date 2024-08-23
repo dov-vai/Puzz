@@ -1,21 +1,16 @@
 import * as PIXI from 'pixi.js';
-import {EventSystem} from 'pixi.js';
 
 export class InfinityCanvas extends PIXI.Container {
-  private events: EventSystem;
-  private worldWidth: number;
-  private worldHeight: number;
+  private events: PIXI.EventSystem;
   private dragging: boolean;
   private dragStart: PIXI.Point;
   private paused: boolean;
   private touchMode: "single" | "double";
   private prevTouch: Touch[];
 
-  constructor(events: EventSystem, worldWidth: number, worldHeight: number) {
+  constructor(events: PIXI.EventSystem) {
     super();
     this.events = events;
-    this.worldWidth = worldWidth;
-    this.worldHeight = worldHeight;
     this.dragging = false;
     this.dragStart = new PIXI.Point();
     this.paused = false;
