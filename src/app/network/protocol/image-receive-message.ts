@@ -3,26 +3,26 @@ import {MessageEncoder} from "../message-encoder";
 import {IMessage} from "./i-message";
 import {MessageType} from "../common";
 
-export class FileReceiveMessage implements IMessage {
+export class ImageReceiveMessage implements IMessage {
   public name: string;
   public size: number;
   public hash: string;
-  public extra?: number;
+  public seed?: number;
 
-  constructor(name: string = "", size: number = 0, hash: string = "", extra?: number) {
+  constructor(name: string = "", size: number = 0, hash: string = "", seed?: number) {
     this.name = name;
     this.size = size;
     this.hash = hash;
-    this.extra = extra;
+    this.seed = seed;
   }
 
   encode(encoder: MessageEncoder): void {
-    encoder.encodeUint8(MessageType.FileReceive);
+    encoder.encodeUint8(MessageType.ImageReceive);
     encoder.encodeString(this.name);
     encoder.encodeUint32(this.size);
     encoder.encodeString(this.hash);
-    if (this.extra != undefined) {
-      encoder.encodeUint32(this.extra);
+    if (this.seed != undefined) {
+      encoder.encodeUint32(this.seed);
     }
   }
 
@@ -31,7 +31,7 @@ export class FileReceiveMessage implements IMessage {
     this.size = decoder.decodeUint32();
     this.hash = decoder.decodeString();
     if (!decoder.done()) {
-      this.extra = decoder.decodeUint32();
+      this.seed = decoder.decodeUint32();
     }
   }
 }

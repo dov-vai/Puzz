@@ -21,11 +21,7 @@ export class PeerManagerService {
   private peers!: Map<string, ManagedPeer>;
   private myId!: string;
   private subscription!: Subscription;
-  private _host!: boolean;
-
-  get host() {
-    return this._host;
-  }
+  private hostId!: string;
 
   onDataChannelOpen: (peer: Peer) => void = () => {
   };
@@ -36,7 +32,7 @@ export class PeerManagerService {
   public async init() {
     this.peers = new Map<string, ManagedPeer>();
     this.myId = "";
-    this._host = false;
+    this.hostId = "";
     this.subscription = this.socket.messages$.pipe(
       tap({
         error: error => console.log("[PeerManager] failed connecting to WebSocket", error)
@@ -126,7 +122,7 @@ export class PeerManagerService {
 
   private handleP2pInit(data: P2PInit) {
     this.myId = data.SocketId;
-    this._host = data.Host;
+    this.hostId = data.HostId;
     console.log("my socketid is:", this.myId);
   }
 
@@ -170,8 +166,10 @@ export class PeerManagerService {
 
   private setupDataChannel(id: string, dataChannel: RTCDataChannel) {
     const peer = this.peers.get(id)!;
+    const isHost = id === this.hostId;
     dataChannel.onopen = () => {
-      this.onDataChannelOpen(new Peer(id, peer.peer, dataChannel));
+      const connectedPeer = new Peer(id, peer.peer, dataChannel, isHost);
+      this.onDataChannelOpen(connectedPeer);
     };
     // should be initialized before the whole function is called
     peer.dataChannel = dataChannel;

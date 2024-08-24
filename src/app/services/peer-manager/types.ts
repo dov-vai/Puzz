@@ -26,7 +26,7 @@ export interface P2PInit {
   Type: "p2pInit";
   SocketId: string;
   RoomId: string;
-  Host: boolean;
+  HostId: string;
 }
 
 export interface RemovePeer {

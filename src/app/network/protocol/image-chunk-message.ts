@@ -3,7 +3,7 @@ import {MessageEncoder} from "../message-encoder";
 import {IMessage} from "./i-message";
 import {MessageType} from "../common";
 
-export class FileChunkMessage implements IMessage {
+export class ImageChunkMessage implements IMessage {
   public buffer?: ArrayBuffer;
   public size: number;
 
@@ -13,7 +13,7 @@ export class FileChunkMessage implements IMessage {
   }
 
   encode(encoder: MessageEncoder): void {
-    encoder.encodeUint8(MessageType.FileChunk);
+    encoder.encodeUint8(MessageType.ImageChunk);
     encoder.encodeUint32(this.size);
     if (this.buffer) {
       encoder.encodeBuffer(this.buffer);

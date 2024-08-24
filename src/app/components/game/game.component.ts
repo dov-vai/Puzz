@@ -55,8 +55,8 @@ export class GameComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  onBack(){
-    this.websocket.sendMessage({Type:"disconnect"});
+  onBack() {
+    this.websocket.sendMessage({Type: "disconnect"});
   }
 
   ngOnDestroy() {

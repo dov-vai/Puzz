@@ -26,7 +26,7 @@ export class SceneManager {
     return Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
   }
 
-  public static async initialize(canvas: HTMLCanvasElement, backgroundColor: number, image?: File) {
+  public static async initialize(canvas: HTMLCanvasElement, backgroundColor: number) {
     SceneManager.app = new PIXI.Application();
 
     // for pixi js devtools extension
@@ -41,31 +41,9 @@ export class SceneManager {
       background: backgroundColor,
     });
 
-    if (image) {
-      await SceneManager.initializeAssets(image);
-    }
-
     SceneManager.app.ticker.add((ticker) => SceneManager.update(ticker));
     window.addEventListener("resize", SceneManager.resize);
 
-  }
-
-  private static async initializeAssets(image: File) {
-    const url = await SceneManager.readAsDataUrl(image);
-    await PIXI.Assets.load({alias: "image", src: url});
-  }
-
-  private static async readAsDataUrl(file: File): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        resolve(event.target?.result as string)
-      }
-      reader.onerror = (event) => {
-        reject(event.target?.error)
-      }
-      reader.readAsDataURL(file)
-    })
   }
 
   public static changeScene(newScene: IScene) {
