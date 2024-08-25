@@ -2,6 +2,9 @@ import {JigsawPiece} from "./jigsaw-piece";
 import * as PIXI from "pixi.js";
 import {PixiUtils} from "../utils";
 import {JigsawPieceManager} from "./jigsaw-piece-manager";
+import {PlayerManager} from "./player-manager";
+import {SnapMessage} from "../../network/protocol/snap-message";
+import {MessageEncoder} from "../../network/message-encoder";
 
 export class DragAndDropHandler {
   private _dragTarget: JigsawPiece | null;
@@ -10,7 +13,7 @@ export class DragAndDropHandler {
     return this._dragTarget;
   }
 
-  constructor(private manager: JigsawPieceManager) {
+  constructor(private manager: JigsawPieceManager, private playerManager: PlayerManager) {
     this._dragTarget = null;
   }
 
@@ -110,6 +113,12 @@ export class DragAndDropHandler {
       const distance = PixiUtils.getDistanceToNeighbourTab(this.manager.world, piece!, neighbour, wiggleRoom, direction);
       if (distance <= this.manager.tileWidth / 2) {
         this.manager.handlePieceSnap(piece, piece.neighbours[i]);
+        // FIXME: an extra dependancy just for this, maybe there's a better way?
+        const encoder = new MessageEncoder();
+        // FIXME: neighbour piece id instead of the array index
+        const snap = new SnapMessage(piece.id, i);
+        snap.encode(encoder)
+        this.playerManager.broadcast(encoder.getBuffer());
         return true;
       }
     }

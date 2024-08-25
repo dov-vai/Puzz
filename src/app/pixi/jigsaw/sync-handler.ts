@@ -121,6 +121,9 @@ export class SyncHandler {
   private handleSnapMessage(decoder: MessageDecoder) {
     const snap = new SnapMessage();
     snap.decode(decoder);
-    this.manager.handlePieceSnap(this.manager.taggedPieces[snap.pieceId], this.manager.taggedPieces[snap.pieceId].neighbours[snap.neighbourId])
+    this.manager.handlePieceSnap(
+      this.manager.taggedPieces[snap.pieceId],
+      this.manager.taggedPieces[snap.pieceId].neighbours[snap.neighbourId]
+    )
   }
 }
