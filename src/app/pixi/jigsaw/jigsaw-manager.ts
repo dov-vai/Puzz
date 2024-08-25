@@ -9,6 +9,7 @@ import {SceneManager} from "../scene-manager";
 import {MessageEncoder} from "../../network/message-encoder";
 import {CursorMessage} from "../../network/protocol/cursor-message";
 import {PixiUtils} from "../utils";
+import {SyncRequestMessage} from "../../network/protocol/sync-request-message";
 
 
 export class JigsawManager {
@@ -22,8 +23,8 @@ export class JigsawManager {
   constructor(private worldContainer: PIXI.Container, private world: PIXI.Graphics, image?: File) {
     this.imageLoader = new ImageLoader();
     this.jigsawPieceManager = new JigsawPieceManager(worldContainer, world);
-    this.dragAndDropHandler = new DragAndDropHandler(this.jigsawPieceManager);
     this.playerManager = new PlayerManager(this.jigsawPieceManager);
+    this.dragAndDropHandler = new DragAndDropHandler(this.jigsawPieceManager, this.playerManager);
     this.syncHandler = new SyncHandler(this.jigsawPieceManager);
     this.prevWorldPointer = new PIXI.Point();
 
@@ -44,7 +45,14 @@ export class JigsawManager {
     peer.registerMessageHandler(this.imageLoader.handle.bind(this.imageLoader));
     peer.registerMessageHandler(this.syncHandler.handle.bind(this.syncHandler));
     if (peer.isHost) {
-      this.imageLoader.requestImage(peer).then(jigsaw => this.init(jigsaw))
+      this.imageLoader.requestImage(peer)
+        .then(jigsaw => this.init(jigsaw))
+        .then(() => {
+          const encoder = new MessageEncoder();
+          const sync = new SyncRequestMessage();
+          sync.encode(encoder);
+          this.playerManager.broadcast(encoder.getBuffer());
+      })
     }
   }
 
