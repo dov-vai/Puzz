@@ -24,14 +24,11 @@ export class ImageLoader {
     const image = await PIXI.Assets.load(uri);
     this.image = image;
     const seed = (Math.random() * 2 ** 32) >>> 0;
+    this.seed = seed;
     return {image, seed};
   }
 
   public handle(message: any, peer: Peer) {
-    if (peer) {
-      console.log(peer);
-    }
-
     if (message instanceof ArrayBuffer) {
       const decoder = new MessageDecoder(message);
       const type = decoder.decodeUint8();
