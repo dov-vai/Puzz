@@ -7,17 +7,25 @@ import {PeerCursor} from "./peer-cursor";
 import {Peer} from "../../services/peer-manager/peer";
 import {MessageType} from "../../network/common";
 
-export class PeerCursorManager {
-  private cursors: PeerCursor[];
+export interface Player {
+  peer: Peer;
+  cursor: PeerCursor;
+}
+
+export class PlayerManager {
+  private players: Map<string, Player>;
 
   constructor(private manager: JigsawPieceManager) {
-    this.cursors = [];
+    this.players = new Map();
   }
 
-  public addCursor(peer: Peer) {
+  public addPlayer(peer: Peer){
+    const cursor = this.createCursor(peer);
+    this.players.set(peer.id, {peer: peer, cursor: cursor});
+  }
+
+  private createCursor(peer: Peer) : PeerCursor {
     const cursor = new PeerCursor();
-    this.cursors.push(cursor);
-    this.manager.worldContainer.addChild(cursor);
 
     peer.registerMessageHandler((message) => {
       const decoder = new MessageDecoder(message);
@@ -30,6 +38,10 @@ export class PeerCursorManager {
     peer.registerCloseHandler(() => {
       this.manager.worldContainer.removeChild(cursor);
     })
+
+    this.manager.worldContainer.addChild(cursor);
+
+    return cursor;
   }
 
   private handleCursorMessage(decoder: MessageDecoder, peerCursor: PeerCursor) {
@@ -64,5 +76,4 @@ export class PeerCursorManager {
     peerCursor.scale.x = 1 / this.manager.worldContainer.scale.x;
     peerCursor.scale.y = 1 / this.manager.worldContainer.scale.y;
   }
-
 }
