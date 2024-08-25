@@ -35,8 +35,8 @@ export class JigsawManager {
 
   public onConnected(peer: Peer) {
     this.cursorManager.addCursor(peer);
-    peer.registerMessageHandler(this.imageLoader.handle);
-    peer.registerMessageHandler(this.syncHandler.handle);
+    peer.registerMessageHandler(this.imageLoader.handle.bind(this.imageLoader));
+    peer.registerMessageHandler(this.syncHandler.handle.bind(this.syncHandler));
     if (peer.isHost) {
       this.imageLoader.requestImage(peer).then(jigsaw => this.init(jigsaw))
     }
