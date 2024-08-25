@@ -85,6 +85,19 @@ export class PixiUtils {
       [objects[i], objects[j]] = [objects[j], objects[i]];
     }
   }
+
+  static async readAsDataUrl(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        resolve(event.target?.result as string)
+      }
+      reader.onerror = (event) => {
+        reject(event.target?.error)
+      }
+      reader.readAsDataURL(file)
+    })
+  }
 }
 
 

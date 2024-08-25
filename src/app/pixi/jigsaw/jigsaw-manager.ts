@@ -8,6 +8,7 @@ import {SyncHandler} from "./sync-handler";
 import {SceneManager} from "../scene-manager";
 import {MessageEncoder} from "../../network/message-encoder";
 import {CursorMessage} from "../../network/protocol/cursor-message";
+import {PixiUtils} from "../utils";
 
 
 export class JigsawManager {
@@ -27,7 +28,7 @@ export class JigsawManager {
     this.prevWorldPointer = new PIXI.Point();
 
     if (image) {
-      this.readAsDataUrl(image).then(uri => {
+      PixiUtils.readAsDataUrl(image).then(uri => {
         this.imageLoader.loadImage(uri).then(jigsaw => this.init(jigsaw))
       })
     }
@@ -45,20 +46,6 @@ export class JigsawManager {
     if (peer.isHost) {
       this.imageLoader.requestImage(peer).then(jigsaw => this.init(jigsaw))
     }
-  }
-
-  // FIXME: method shouldn't be in this class
-  private async readAsDataUrl(file: File): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        resolve(event.target?.result as string)
-      }
-      reader.onerror = (event) => {
-        reject(event.target?.error)
-      }
-      reader.readAsDataURL(file)
-    })
   }
 
   update(ticker: PIXI.Ticker) {
