@@ -2,12 +2,14 @@ import * as PIXI from "pixi.js";
 import {JigsawGenerator} from "./jigsaw-generator";
 import {SceneManager} from "../scene-manager";
 import {JigsawNeighbour, JigsawPiece} from "./jigsaw-piece";
+import {PixiUtils} from "../utils";
 
 export class JigsawPieceManager {
   private _worldContainer: PIXI.Container;
   private _world: PIXI.Graphics;
   private _taggedPieces!: JigsawPiece[];
   private _tileWidth!: number;
+  private random: () => number;
 
   get taggedPieces() {
     return this._taggedPieces;
@@ -28,11 +30,13 @@ export class JigsawPieceManager {
   constructor(worldContainer: PIXI.Container, world: PIXI.Graphics) {
     this._worldContainer = worldContainer;
     this._world = world;
+    this.random = Math.random;
   }
 
   public loadPieces(image: PIXI.Texture, seed: number) {
+    this.random = PixiUtils.splitMix32(seed);
     this._tileWidth = 100;
-    const generator = new JigsawGenerator(image, this.tileWidth, seed);
+    const generator = new JigsawGenerator(image, this.tileWidth, this.random);
     this._taggedPieces = generator.generatePieces(5, 0x000000, SceneManager.appRenderer);
     const worldMidpoint = new PIXI.Point(this.world.width / 2, this.world.height / 2);
     this.placePieces(image, worldMidpoint);
@@ -40,7 +44,7 @@ export class JigsawPieceManager {
 
   private placePieces(image: PIXI.Texture, position: PIXI.Point) {
     const shuffledPieces = [...this.taggedPieces];
-    this.shuffle(shuffledPieces);
+    PixiUtils.shuffle(shuffledPieces, this.random)
     const startPoint = new PIXI.Point(
       position.x - image.width,
       position.y - image.height,
@@ -99,13 +103,6 @@ export class JigsawPieceManager {
     }
 
     return positions;
-  }
-
-  private shuffle(pieces: JigsawPiece[]) {
-    for (let i = pieces.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [pieces[i], pieces[j]] = [pieces[j], pieces[i]];
-    }
   }
 
   public handlePieceSnap(piece: JigsawPiece, jigsawNeighbour: JigsawNeighbour) {

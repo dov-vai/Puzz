@@ -11,12 +11,10 @@ export interface Shape {
 export class JigsawGenerator {
   private texture: PIXI.Texture;
   private tileWidth: number;
-  private random: () => number;
 
-  constructor(texture: PIXI.Texture, tileWidth: number, seed: number) {
+  constructor(texture: PIXI.Texture, tileWidth: number, private random: () => number) {
     this.texture = texture;
     this.tileWidth = tileWidth;
-    this.random = this.splitMix32(seed);
   }
 
   public getMask(
@@ -115,20 +113,6 @@ export class JigsawGenerator {
     mask.closePath();
 
     return mask;
-  }
-
-  // pseudo-random number generator
-  // https://stackoverflow.com/a/47593316
-  private splitMix32(a: number) {
-    return () => {
-      a |= 0;
-      a = a + 0x9e3779b9 | 0;
-      let t = a ^ a >>> 16;
-      t = Math.imul(t, 0x21f0aaad);
-      t = t ^ t >>> 15;
-      t = Math.imul(t, 0x735a2d97);
-      return ((t = t ^ t >>> 15) >>> 0) / 4294967296;
-    }
   }
 
   private getRandomTabValue(): number {
