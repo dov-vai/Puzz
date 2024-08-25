@@ -19,8 +19,6 @@ export class DragAndDropHandler {
       if (event.nativeEvent instanceof MouseEvent && event.nativeEvent.button === 2) {
         return;
       }
-      // FIXME: is this necessary anymore?
-      //sceneThis.worldContainer.pause();
       let target: PIXI.Sprite | PIXI.Container = this;
       if (this.parent != sceneThis.manager.worldContainer) {
         target = this.parent;
@@ -32,14 +30,14 @@ export class DragAndDropHandler {
       target.position.copyFrom(sceneThis.manager.world.toLocal(event.global));
       sceneThis.dragTarget = this;
 
-      sceneThis.manager.worldContainer.on('pointermove', sceneThis.onDragMove);
+      sceneThis.manager.worldContainer.on('pointermove', sceneThis.onDragMove.bind(sceneThis));
     }
 
     this.manager.worldContainer.eventMode = "static";
     this.manager.worldContainer.hitArea = this.manager.world.boundsArea;
 
-    this.manager.worldContainer.on('pointerupoutside', this.onDragEnd);
-    this.manager.worldContainer.on('pointerup', this.onDragEnd);
+    this.manager.worldContainer.on('pointerupoutside', this.onDragEnd.bind(this));
+    this.manager.worldContainer.on('pointerup', this.onDragEnd.bind(this));
 
     this.manager.taggedPieces.forEach(piece => {
       piece.eventMode = "static";
@@ -77,8 +75,6 @@ export class DragAndDropHandler {
 
       this.dragTarget = null;
     }
-    // FIXME: is this necessary anymore?
-    // sceneThis.worldContainer.resume();
   }
 
   private checkContainerSnap(container: PIXI.Container) {
