@@ -8,15 +8,17 @@ import {JigsawScene} from "../../pixi/jigsaw/jigsaw-scene";
   providedIn: 'root'
 })
 export class GameService {
+  private scene!: JigsawScene;
+
   constructor(private peerManager: PeerManagerService) {
   }
 
   async init(canvas: HTMLCanvasElement, image?: File) {
     await SceneManager.initialize(canvas, 0x2d3250);
-    const scene = new JigsawScene(this.peerManager, image);
+    this.scene = new JigsawScene(this.peerManager, image);
     // must be called after scene setup as the onDataChannelOpen function variable won't get set!
     await this.peerManager.init();
-    SceneManager.changeScene(scene);
+    SceneManager.changeScene(this.scene);
   }
 
   destroy() {
@@ -24,4 +26,7 @@ export class GameService {
     this.peerManager.destroy();
   }
 
+  getImageUri() {
+    return this.scene?.getImageUri();
+  }
 }

@@ -11,6 +11,7 @@ import {
 import {GameService} from "../../services/game/game.service";
 import {Router, RouterLink} from "@angular/router";
 import {WebSocketService} from "../../services/web-socket/web-socket.service";
+import {NgIf} from "@angular/common";
 
 export interface GameExtras {
   image?: File;
@@ -20,7 +21,8 @@ export interface GameExtras {
   selector: 'app-game',
   standalone: true,
   imports: [
-    RouterLink
+    RouterLink,
+    NgIf
   ],
   templateUrl: './game.component.html',
   styleUrl: './game.component.css',
@@ -31,6 +33,8 @@ export class GameComponent implements AfterViewInit, OnDestroy {
   ngZone = inject(NgZone);
   websocket = inject(WebSocketService);
   extras?: GameExtras;
+  showImage: boolean = false;
+  imageUri?: string;
 
   constructor(private router: Router) {
     this.extras = this.router.getCurrentNavigation()?.extras.state as GameExtras;
@@ -52,7 +56,13 @@ export class GameComponent implements AfterViewInit, OnDestroy {
   }
 
   previewImage() {
+    if (!this.imageUri) {
+      this.imageUri = this.game.getImageUri();
+    }
 
+    if (this.imageUri) {
+      this.showImage = !this.showImage;
+    }
   }
 
   ngOnDestroy() {

@@ -11,5 +11,6 @@
       </span>
     </button>
   </div>
+  <img *ngIf="showImage" class="preview-image" src="{{ imageUri }}" alt="Jigsaw preview">
   <canvas width="1136" height="640" #gameCanvas></canvas>
 </div>

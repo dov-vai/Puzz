@@ -8,7 +8,6 @@ import {SyncHandler} from "./sync-handler";
 import {SceneManager} from "../scene-manager";
 import {MessageEncoder} from "../../network/message-encoder";
 import {CursorMessage, PickedPiece} from "../../network/protocol/cursor-message";
-import {PixiUtils} from "../utils";
 import {SyncRequestMessage} from "../../network/protocol/sync-request-message";
 
 
@@ -29,14 +28,12 @@ export class JigsawManager {
     this.prevWorldPointer = new PIXI.Point();
 
     if (image) {
-      PixiUtils.readAsDataUrl(image).then(uri => {
-        this.imageLoader.loadImage(uri).then(jigsaw => this.init(jigsaw))
-      })
+      this.imageLoader.loadImage(image).then(jigsaw => this.init(jigsaw));
     }
   }
 
   private init(jigsaw: JigsawImage) {
-    this.jigsawPieceManager.loadPieces(jigsaw.image, jigsaw.seed);
+    this.jigsawPieceManager.loadPieces(jigsaw.texture, jigsaw.seed);
     this.dragAndDropHandler.setupEvents();
   }
 
@@ -52,7 +49,7 @@ export class JigsawManager {
           const sync = new SyncRequestMessage();
           sync.encode(encoder);
           this.playerManager.broadcast(encoder.getBuffer());
-      })
+        })
     }
   }
 
@@ -69,7 +66,7 @@ export class JigsawManager {
       const message = new MessageEncoder();
       const target = this.dragAndDropHandler.dragTarget;
       let piece: PickedPiece | undefined;
-      if (target){
+      if (target) {
         const piecePivot = target.toLocal(worldPointer, this.world);
         piece = {
           id: target.id,
@@ -83,5 +80,10 @@ export class JigsawManager {
     }
 
     this.prevWorldPointer = worldPointer;
+  }
+
+  // TODO: create a command system, passing every command as a separate function from the overlay through 3 layers is annoying
+  public getImageUri() {
+    return this.imageLoader.uri;
   }
 }

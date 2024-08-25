@@ -16,4 +16,13 @@
   justify-content: center;
 }
 
-
+.preview-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  max-width: 40vw;
+  max-height: 40vh;
+  object-fit: contain;
+  border: 2px solid #fff;
+  pointer-events: none;
+}

@@ -45,4 +45,8 @@ export class JigsawScene extends PIXI.Container implements IScene {
 
   }
 
+  public getImageUri() {
+    return this.jigsawManager.getImageUri();
+  }
+
 }
