@@ -8,24 +8,37 @@ import {ImageRequestMessage} from "../../network/protocol/image-request-message"
 import {MessageType} from "../../network/common";
 
 export interface JigsawImage {
-  image: PIXI.Texture;
+  texture: PIXI.Texture;
   seed: number;
 }
 
 export class ImageLoader {
-  private image?: PIXI.Texture;
+  private image?: File;
+  private texture?: PIXI.Texture;
   private seed?: number;
+  private _uri?: string;
   private imageBuffer!: Uint8Array;
   private bufferOffset!: number;
+  private mimeType!: string;
   private resolveImage: (image: JigsawImage) => void = () => {
   };
 
-  public async loadImage(uri: string): Promise<JigsawImage> {
-    const image = await PIXI.Assets.load(uri);
+  get uri() {
+    return this._uri;
+  }
+
+  public async loadImage(image: File): Promise<JigsawImage> {
     this.image = image;
+    this._uri = URL.createObjectURL(image);
+    const texture = await PIXI.Assets.load({
+      src: this._uri,
+      format: "png",
+      loadParser: "loadTextures"
+    });
+    this.texture = texture;
     const seed = (Math.random() * 2 ** 32) >>> 0;
     this.seed = seed;
-    return {image, seed};
+    return {texture, seed};
   }
 
   public handle(message: any, peer: Peer) {
@@ -64,29 +77,32 @@ export class ImageLoader {
     imageReceive.decode(decoder);
     this.imageBuffer = new Uint8Array(imageReceive.size);
     this.bufferOffset = 0;
+    this.mimeType = imageReceive.mimeType;
     if (imageReceive.seed != undefined) {
       this.seed = imageReceive.seed;
     }
   }
 
   private handleImageRequestMessage(peer: Peer) {
-    const encoder = new MessageEncoder();
-    const buffer = this.convertStringToBinary(this.image?.source._sourceOrigin!);
-    const imageReceive = new ImageReceiveMessage("image", buffer.byteLength, "", this.seed);
-    imageReceive.encode(encoder);
-    peer.sendMessage(encoder.getBuffer());
-
-    // TODO: expensive operation, should be async
-    const chunkSize = 15 * 1024;
-    let size = 0;
-    while (size < buffer.byteLength) {
+    this.image?.arrayBuffer().then(buffer => {
       const encoder = new MessageEncoder();
-      const end = Math.min(chunkSize, buffer.byteLength - size);
-      const fileChunk = new ImageChunkMessage(buffer.slice(size, size + end), end);
-      fileChunk.encode(encoder);
+      const imageReceive = new ImageReceiveMessage("image", this.image?.type, buffer.byteLength, "", this.seed);
+      imageReceive.encode(encoder);
       peer.sendMessage(encoder.getBuffer());
-      size += end;
-    }
+
+      // TODO: expensive operation, should be async
+      // webrtc ordered data channel limit is 16KiB, so we subtract what's taken up by the message type + size (5 bytes)
+      const chunkSize = 16 * 1024 - 5;
+      let size = 0;
+      while (size < buffer.byteLength) {
+        const encoder = new MessageEncoder();
+        const end = Math.min(chunkSize, buffer.byteLength - size);
+        const fileChunk = new ImageChunkMessage(buffer.slice(size, size + end), end);
+        fileChunk.encode(encoder);
+        peer.sendMessage(encoder.getBuffer());
+        size += end;
+      }
+    })
   }
 
   private handleImageChunkMessage(decoder: MessageDecoder, peer: Peer) {
@@ -101,15 +117,15 @@ export class ImageLoader {
   }
 
   private completeImageReceive() {
-    const decoder = new MessageDecoder(this.imageBuffer.buffer);
-    PIXI.Assets.load(decoder.decodeString(this.bufferOffset)).then((texture: PIXI.Texture) => {
-      this.resolveImage({image: texture, seed: this.seed!});
+    const blob = new Blob([this.imageBuffer.buffer], {type: this.mimeType});
+    this._uri = URL.createObjectURL(blob);
+    PIXI.Assets.load({
+      src: this._uri,
+      type: "png",
+      loadParser: "loadTextures"
+    }).then((texture: PIXI.Texture) => {
+      this.texture = texture;
+      this.resolveImage({texture: texture, seed: this.seed!});
     })
-  }
-
-  private convertStringToBinary(value: string) {
-    const encoder = new MessageEncoder();
-    encoder.encodeString(value, value.length);
-    return encoder.getBuffer();
   }
 }
