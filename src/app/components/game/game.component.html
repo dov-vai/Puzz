@@ -1,6 +1,15 @@
 <div class="game-container">
   <div class="game-gui">
-    <button class="button is-primary" [routerLink]="['']" (click)="onBack()">Back</button>
+    <button class="button is-primary" [routerLink]="['']" (click)="onBack()">
+      <span class="icon">
+        <img src="exit.svg" alt="Exit">
+      </span>
+    </button>
+    <button class="button is-primary" (click)="previewImage()">
+      <span class="icon">
+        <img src="picture.svg" alt="Image preview">
+      </span>
+    </button>
   </div>
   <canvas width="1136" height="640" #gameCanvas></canvas>
 </div>
