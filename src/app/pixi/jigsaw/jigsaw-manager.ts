@@ -7,7 +7,7 @@ import {PlayerManager} from "./player-manager";
 import {SyncHandler} from "./sync-handler";
 import {SceneManager} from "../scene-manager";
 import {MessageEncoder} from "../../network/message-encoder";
-import {CursorMessage} from "../../network/protocol/cursor-message";
+import {CursorMessage, PickedPiece} from "../../network/protocol/cursor-message";
 import {PixiUtils} from "../utils";
 import {SyncRequestMessage} from "../../network/protocol/sync-request-message";
 
@@ -67,7 +67,17 @@ export class JigsawManager {
 
     if ((this.prevWorldPointer.x != worldPointer.x || this.prevWorldPointer.y != worldPointer.y) && this.world.containsPoint(worldPointer)) {
       const message = new MessageEncoder();
-      const cursor = new CursorMessage(worldPointer.x, worldPointer.y, this.dragAndDropHandler.dragTarget?.id);
+      const target = this.dragAndDropHandler.dragTarget;
+      let piece: PickedPiece | undefined;
+      if (target){
+        const piecePivot = target.toLocal(worldPointer, this.world);
+        piece = {
+          id: target.id,
+          pivotX: piecePivot.x,
+          pivotY: piecePivot.y,
+        }
+      }
+      const cursor = new CursorMessage(worldPointer.x, worldPointer.y, piece);
       cursor.encode(message);
       this.playerManager.broadcast(message.getBuffer());
     }

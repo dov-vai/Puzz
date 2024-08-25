@@ -40,18 +40,19 @@ export class PeerCursor extends PIXI.Graphics {
     const cursorPosition = new PIXI.Point(cursor.x, cursor.y);
     this.position.copyFrom(cursorPosition);
     if (cursor.piece != undefined) {
-      let target: JigsawPiece | PIXI.Container = manager.taggedPieces[cursor.piece];
+      let target: JigsawPiece | PIXI.Container = manager.taggedPieces[cursor.piece.id];
+      let pivotCoords = new PIXI.Point(cursor.piece.pivotX, cursor.piece.pivotY);
       if (target.parent != manager.worldContainer) {
         target = target.parent;
+        pivotCoords = target.toLocal(pivotCoords, manager.taggedPieces[cursor.piece.id]);
       }
-      const pivotCoords = target.toLocal(cursorPosition, manager.world);
-      if (this.lastPickedPiece != cursor.piece) {
+      if (this.lastPickedPiece != cursor.piece.id) {
         // TODO: more foolproof pivot setting?
         target.zIndex = 1;
         target.pivot.copyFrom(pivotCoords);
       }
       target.position.copyFrom(cursorPosition);
-      this.lastPickedPiece = cursor.piece;
+      this.lastPickedPiece = cursor.piece.id;
     } else {
       if (this.lastPickedPiece != -1) {
         let target: JigsawPiece | PIXI.Container = manager.taggedPieces[this.lastPickedPiece];
