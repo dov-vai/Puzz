@@ -2,8 +2,6 @@ import {IScene, SceneManager} from "../scene-manager";
 import * as PIXI from "pixi.js";
 import {InfinityCanvas} from "../infinity-canvas";
 import {PeerManagerService} from "../../services/peer-manager/peer-manager.service";
-import {MessageEncoder} from "../../network/message-encoder";
-import {CursorMessage} from "../../network/protocol/cursor-message";
 import {JigsawManager} from "./jigsaw-manager";
 
 export class JigsawScene extends PIXI.Container implements IScene {
@@ -40,18 +38,7 @@ export class JigsawScene extends PIXI.Container implements IScene {
   }
 
   public update(ticker: PIXI.Ticker) {
-    // FIXME: needs to be moved
-    const currentMousePos = SceneManager.appRenderer.events.pointer.global;
-    const worldPointer = this.world.toLocal(currentMousePos);
-
-    if ((this.prevWorldPointer.x != worldPointer.x || this.prevWorldPointer.y != worldPointer.y) && this.world.containsPoint(worldPointer)) {
-      const message = new MessageEncoder();
-      const cursor = new CursorMessage(worldPointer.x, worldPointer.y, undefined);
-      cursor.encode(message);
-      this.peerManager.broadcastMessage(message.getBuffer());
-    }
-
-    this.prevWorldPointer = worldPointer;
+    this.jigsawManager.update(ticker);
   }
 
   public resize(width: number, height: number) {

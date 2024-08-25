@@ -25,4 +25,10 @@ export class PlayerManager {
     this.manager.worldContainer.addChild(cursor);
     return cursor;
   }
+
+  public broadcast(message: any) {
+    for (let player of this.players.values()) {
+      player.peer.sendMessage(message);
+    }
+  }
 }

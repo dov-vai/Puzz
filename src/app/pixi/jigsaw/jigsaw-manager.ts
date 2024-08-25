@@ -5,6 +5,9 @@ import {DragAndDropHandler} from "./drag-and-drop-handler";
 import {ImageLoader, JigsawImage} from "./image-loader";
 import {PlayerManager} from "./player-manager";
 import {SyncHandler} from "./sync-handler";
+import {SceneManager} from "../scene-manager";
+import {MessageEncoder} from "../../network/message-encoder";
+import {CursorMessage} from "../../network/protocol/cursor-message";
 
 
 export class JigsawManager {
@@ -13,13 +16,15 @@ export class JigsawManager {
   private imageLoader: ImageLoader;
   private playerManager: PlayerManager;
   private syncHandler: SyncHandler;
+  private prevWorldPointer: PIXI.Point;
 
-  constructor(worldContainer: PIXI.Container, world: PIXI.Graphics, image?: File) {
+  constructor(private worldContainer: PIXI.Container, private world: PIXI.Graphics, image?: File) {
     this.imageLoader = new ImageLoader();
     this.jigsawPieceManager = new JigsawPieceManager(worldContainer, world);
     this.dragAndDropHandler = new DragAndDropHandler(this.jigsawPieceManager);
     this.playerManager = new PlayerManager(this.jigsawPieceManager);
     this.syncHandler = new SyncHandler(this.jigsawPieceManager);
+    this.prevWorldPointer = new PIXI.Point();
 
     if (image) {
       this.readAsDataUrl(image).then(uri => {
@@ -54,5 +59,24 @@ export class JigsawManager {
       }
       reader.readAsDataURL(file)
     })
+  }
+
+  update(ticker: PIXI.Ticker) {
+    this.broadcastPointer()
+  }
+
+  // TODO: still needs a better place for it to reside...
+  broadcastPointer() {
+    const currentMousePos = SceneManager.appRenderer.events.pointer.global;
+    const worldPointer = this.world.toLocal(currentMousePos);
+
+    if ((this.prevWorldPointer.x != worldPointer.x || this.prevWorldPointer.y != worldPointer.y) && this.world.containsPoint(worldPointer)) {
+      const message = new MessageEncoder();
+      const cursor = new CursorMessage(worldPointer.x, worldPointer.y, this.dragAndDropHandler.dragTarget?.id);
+      cursor.encode(message);
+      this.playerManager.broadcast(message.getBuffer());
+    }
+
+    this.prevWorldPointer = worldPointer;
   }
 }

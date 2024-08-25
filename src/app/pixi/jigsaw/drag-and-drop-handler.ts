@@ -4,10 +4,14 @@ import {PixiUtils} from "../utils";
 import {JigsawPieceManager} from "./jigsaw-piece-manager";
 
 export class DragAndDropHandler {
-  private dragTarget: JigsawPiece | null;
+  private _dragTarget: JigsawPiece | null;
+
+  get dragTarget() {
+    return this._dragTarget;
+  }
 
   constructor(private manager: JigsawPieceManager) {
-    this.dragTarget = null;
+    this._dragTarget = null;
   }
 
   public setupEvents() {
@@ -28,7 +32,7 @@ export class DragAndDropHandler {
       const pointerCoords = target.toLocal(event.global);
       target.pivot.copyFrom(pointerCoords);
       target.position.copyFrom(sceneThis.manager.world.toLocal(event.global));
-      sceneThis.dragTarget = this;
+      sceneThis._dragTarget = this;
 
       sceneThis.manager.worldContainer.on('pointermove', sceneThis.onDragMove.bind(sceneThis));
     }
@@ -47,33 +51,33 @@ export class DragAndDropHandler {
   }
 
   private onDragMove(event: PIXI.FederatedPointerEvent) {
-    if (this.dragTarget) {
+    if (this._dragTarget) {
       let point = this.manager.world.toLocal(event.global);
       if (this.manager.world.containsPoint(point)) {
-        if (this.dragTarget.parent != this.manager.worldContainer) {
-          this.dragTarget.parent?.position.copyFrom(point);
+        if (this._dragTarget.parent != this.manager.worldContainer) {
+          this._dragTarget.parent?.position.copyFrom(point);
         } else {
-          this.dragTarget.position.copyFrom(point);
+          this._dragTarget.position.copyFrom(point);
         }
       }
     }
   }
 
   private onDragEnd() {
-    if (this.dragTarget) {
+    if (this._dragTarget) {
       this.manager.worldContainer.off('pointermove', this.onDragMove);
 
-      if (this.dragTarget.parent != this.manager.worldContainer) {
-        this.dragTarget.parent.alpha = 1;
-        this.dragTarget.parent.zIndex = 0;
-        this.checkContainerSnap(this.dragTarget.parent);
+      if (this._dragTarget.parent != this.manager.worldContainer) {
+        this._dragTarget.parent.alpha = 1;
+        this._dragTarget.parent.zIndex = 0;
+        this.checkContainerSnap(this._dragTarget.parent);
       } else {
-        this.dragTarget.alpha = 1;
-        this.dragTarget.zIndex = 0;
-        this.checkPieceSnap(this.dragTarget);
+        this._dragTarget.alpha = 1;
+        this._dragTarget.zIndex = 0;
+        this.checkPieceSnap(this._dragTarget);
       }
 
-      this.dragTarget = null;
+      this._dragTarget = null;
     }
   }
 
