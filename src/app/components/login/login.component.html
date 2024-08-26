@@ -1,0 +1,30 @@
+<div class="box">
+  <form [formGroup]="loginForm" (ngSubmit)="login()">
+    <div class="field">
+      <label class="label">Username</label>
+      <div class="control">
+        <input class="input" type="text" placeholder="Username" formControlName="username">
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="label">Password</label>
+      <div class="control">
+        <input class="input" type="password" placeholder="Password" formControlName="password">
+      </div>
+    </div>
+
+    <p class="help is-danger" *ngIf="invalid">Invalid username or password</p>
+
+    <div class="field is-grouped is-grouped-centered">
+      <div class="control">
+        <button class="button is-primary" type="submit" [disabled]="loginForm.invalid">Sign in</button>
+      </div>
+      <div class="field">
+        <div class="control">
+          <button class="button is-link" (click)="register()">Register</button>
+        </div>
+      </div>
+    </div>
+  </form>
+</div>
