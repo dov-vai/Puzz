@@ -4,6 +4,8 @@ import {HomeComponent} from "./pages/home/home.component";
 import {PageNotFoundComponent} from "./pages/page-not-found/page-not-found.component";
 import {PublicGamesComponent} from "./components/public-games/public-games.component";
 import {HostGameComponent} from "./components/host-game/host-game.component";
+import {LoginComponent} from "./components/login/login.component";
+import {RegisterComponent} from "./components/register/register.component";
 
 export const routes: Routes = [
   {
@@ -20,11 +22,21 @@ export const routes: Routes = [
         path: "public",
         title: "Public Rooms",
         component: PublicGamesComponent
+      },
+      {
+        path: "login",
+        title: "Login",
+        component: LoginComponent,
+      },
+      {
+        path: "register",
+        title: "Register",
+        component: RegisterComponent,
       }
     ]
   },
   {
-    path: "play",
+    path: "play/:id",
     title: "Game",
     component: GameComponent
   },
