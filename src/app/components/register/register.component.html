@@ -1,0 +1,32 @@
+<div class="box">
+  <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
+    <div class="field">
+      <label class="label">Username</label>
+      <div class="control">
+        <input class="input" type="text" placeholder="Username" formControlName="username">
+      </div>
+    </div>
+
+    <p class="help is-danger" *ngIf="usernameTaken">Username is taken</p>
+    <div class="field">
+      <label class="label">Password</label>
+      <div class="control">
+        <input class="input" type="password" placeholder="Password" formControlName="password">
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="label">Confirm password</label>
+      <div class="control">
+        <input class="input" type="password" placeholder="Confirm password" formControlName="confirmPassword">
+      </div>
+    </div>
+    <p class="help is-danger" *ngIf="!passwordsMatch">Passwords do not match</p>
+
+    <div class="field is-grouped is-grouped-centered">
+      <div class="control">
+        <button class="button is-primary" type="submit" [disabled]="registerForm.invalid">Create an account</button>
+      </div>
+    </div>
+  </form>
+</div>
