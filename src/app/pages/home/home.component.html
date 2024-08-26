@@ -1,17 +1,30 @@
 <div class="container my-6">
-  <div class="buttons has-addons is-centered">
-    <button class="button" [routerLink]="['']" [routerLinkActive]="['is-primary', 'is-selected']" [routerLinkActiveOptions]="{exact: true}">
+  <nav class="level">
+    <div class="level-item level-right">
+      <div class="buttons has-addons">
+        <button class="button" [routerLink]="['']" [routerLinkActive]="['is-primary', 'is-selected']"
+                [routerLinkActiveOptions]="{exact: true}">
       <span class="icon">
         <img src="magic-wand.svg" alt="Host game">
       </span>
-      <span>Host game</span>
-    </button>
-    <button class="button" [routerLink]="['public']" [routerLinkActive]="['is-primary','is-selected']">
+          <span>Host game</span>
+        </button>
+        <button class="button" [routerLink]="['public']" [routerLinkActive]="['is-primary','is-selected']">
       <span class="icon">
         <img src="list.svg" alt="Public Rooms">
       </span>
-      <span>Public rooms</span>
-    </button>
-  </div>
+          <span>Public rooms</span>
+        </button>
+      </div>
+    </div>
+    <div class="level-item level-right">
+      <button class="button" [routerLink]="['login']" [routerLinkActive]="['is-primary','is-selected']">
+        <span class="icon">
+          <img src="user.svg" alt="Profile">
+        </span>
+        <span>Login</span>
+      </button>
+    </div>
+  </nav>
   <router-outlet></router-outlet>
 </div>
