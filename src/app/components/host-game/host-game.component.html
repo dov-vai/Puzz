@@ -11,7 +11,6 @@
       }
     </div>
 
-
     <label class="label">Image</label>
     <div class="file has-name is-fullwidth">
       <label class="file-label">
@@ -23,11 +22,28 @@
       </label>
     </div>
 
+    <label class="label">Pieces</label>
+    <div class="columns">
+      <div class="column is-four-fifths">
+        <input class="input" type="number" placeholder="Piece count" formControlName="pieces" (input)="onPiecesChanged($event)">
+        <p class="help is-warning" *ngIf="estimatedPieces">Actual pieces: {{ estimatedPieces.columns * estimatedPieces.rows }}, image divided into {{estimatedPieces.rows}}x{{estimatedPieces.columns}}</p>
+      </div>
+      <div class="column">
+        <div class="buttons has-addons is-centered">
+          <button class="button is-link" type="button" (click)="setPieces(100)">100</button>
+          <button class="button is-link" type="button" (click)="setPieces(200)">200</button>
+          <button class="button is-link" type="button" (click)="setPieces(500)">500</button>
+          <button class="button is-link" type="button" (click)="setPieces(1000)">1000</button>
+        </div>
+      </div>
+    </div>
 
-    <label class="checkbox">
-      <input type="checkbox" formControlName="publicRoom"/>
-      Public Room
-    </label>
+    <div class="field">
+      <label class="checkbox">
+        <input type="checkbox" formControlName="publicRoom"/>
+        Public Room
+      </label>
+    </div>
 
     <div class="field is-grouped is-grouped-centered">
       <div class="control">

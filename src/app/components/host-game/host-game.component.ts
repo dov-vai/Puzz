@@ -5,6 +5,7 @@ import {FormControl, FormGroup, ReactiveFormsModule, Validators} from "@angular/
 import {NgClass, NgIf} from "@angular/common";
 import {Subscription} from "rxjs";
 import {GameExtras} from "../game/game.component";
+import {JigsawEstimator} from "../../pixi/jigsaw/jigsaw-estimator";
 
 @Component({
   selector: 'app-host-game',
@@ -22,6 +23,8 @@ export class HostGameComponent implements OnInit, OnDestroy {
   websocket = inject(WebSocketService);
   router = inject(Router);
   subscription!: Subscription;
+  img?: HTMLImageElement;
+  estimatedPieces?: {rows: number, columns: number, pieceWidth: number, pieceHeight: number};
 
   ngOnInit(): void {
     this.subscription = this.websocket.messages$.subscribe(this.onMessage.bind(this));
@@ -31,6 +34,7 @@ export class HostGameComponent implements OnInit, OnDestroy {
   roomForm = new FormGroup({
     title: new FormControl('', [Validators.required]),
     image: new FormControl((null as File | null), [Validators.required]),
+    pieces: new FormControl(100, [Validators.required, Validators.min(2)]),
     publicRoom: new FormControl(false),
   })
 
@@ -56,10 +60,36 @@ export class HostGameComponent implements OnInit, OnDestroy {
     return this.roomForm.get('image');
   }
 
+  get pieces(){
+    return this.roomForm.get('pieces');
+  }
+
+  setPieces(pieces: number){
+    this.roomForm.patchValue({pieces: pieces});
+    this.calculatePieces();
+  }
+
+  onPiecesChanged(event: Event){
+    this.calculatePieces();
+  }
+
   onImagePicked(event: Event) {
     const file = (event.target as HTMLInputElement).files?.item(0);
     if (file) {
       this.roomForm.patchValue({image: file});
+      this.revokeImageUrl();
+      this.img = new Image();
+      this.img.onload = () => {
+        this.calculatePieces();
+      }
+      this.img.src = URL.createObjectURL(file);
+    }
+  }
+
+  private calculatePieces(){
+    if (this.img?.complete && this.pieces?.valid){
+      const pieces = this.pieces?.value;
+      this.estimatedPieces = JigsawEstimator.estimate(this.img.width, this.img.height, Number(pieces), "backwards");
     }
   }
 
@@ -74,7 +104,7 @@ export class HostGameComponent implements OnInit, OnDestroy {
 
         // TODO: image verification
         const extras: GameExtras = {image: this.image!.value!}
-        this.router.navigate(['play'], {state: extras});
+        this.router.navigate(['play', message.RoomId], {state: extras});
         break;
       }
       default: {
@@ -84,7 +114,14 @@ export class HostGameComponent implements OnInit, OnDestroy {
     }
   }
 
+  private revokeImageUrl(){
+    if (this.img){
+      URL.revokeObjectURL(this.img.src);
+    }
+  }
+
   ngOnDestroy(): void {
     this.subscription.unsubscribe();
+    this.revokeImageUrl();
   }
 }
