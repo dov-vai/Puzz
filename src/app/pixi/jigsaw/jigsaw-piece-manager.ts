@@ -46,12 +46,16 @@ export class JigsawPieceManager {
     const shuffledPieces = [...this.taggedPieces];
     PixiUtils.shuffle(shuffledPieces, this.random)
     const startPoint = new PIXI.Point(
-      position.x - image.width,
-      position.y - image.height,
+      position.x - image.width/2,
+      position.y - image.height/2 - this.tileWidth,
     );
+    const offset = 50;
     const columns = Math.ceil(image.width / this.tileWidth);
     const rows = Math.ceil(image.height / this.tileWidth);
-    const positions = this.rectangularSpiral(columns * rows, this.tileWidth + 50, startPoint.x, startPoint.y, columns, rows);
+    // recalculate columns and rows needed with piece offset
+    const adjColumns = Math.ceil(image.width / (this.tileWidth + offset));
+    const adjRows = Math.ceil(image.height / (this.tileWidth + offset));
+    const positions = this.rectangularSpiral(columns * rows, this.tileWidth + offset, startPoint.x, startPoint.y, adjColumns, adjRows);
     for (let y = 0; y < rows; y++) {
       for (let x = 0; x < columns; x++) {
         const id = y * columns + x;
