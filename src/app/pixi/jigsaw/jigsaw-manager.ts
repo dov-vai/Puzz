@@ -19,7 +19,7 @@ export class JigsawManager {
   private syncHandler: SyncHandler;
   private prevWorldPointer: PIXI.Point;
 
-  constructor(private worldContainer: PIXI.Container, private world: PIXI.Graphics, image?: File) {
+  constructor(private worldContainer: PIXI.Container, private world: PIXI.Graphics, image?: File, pieces?: number) {
     this.imageLoader = new ImageLoader();
     this.jigsawPieceManager = new JigsawPieceManager(worldContainer, world);
     this.playerManager = new PlayerManager(this.jigsawPieceManager);
@@ -27,13 +27,13 @@ export class JigsawManager {
     this.syncHandler = new SyncHandler(this.jigsawPieceManager);
     this.prevWorldPointer = new PIXI.Point();
 
-    if (image) {
-      this.imageLoader.loadImage(image).then(jigsaw => this.init(jigsaw));
+    if (image && pieces) {
+      this.imageLoader.loadImage(image, pieces).then(jigsaw => this.init(jigsaw));
     }
   }
 
   private init(jigsaw: JigsawImage) {
-    this.jigsawPieceManager.loadPieces(jigsaw.texture, jigsaw.seed);
+    this.jigsawPieceManager.loadPieces(jigsaw.texture, jigsaw.seed, jigsaw.pieces);
     this.dragAndDropHandler.setupEvents();
   }
 

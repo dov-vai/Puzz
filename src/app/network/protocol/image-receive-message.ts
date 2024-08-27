@@ -8,14 +8,16 @@ export class ImageReceiveMessage implements IMessage {
   public mimeType: string;
   public size: number;
   public hash: string;
-  public seed?: number;
+  public seed: number;
+  public pieces: number;
 
-  constructor(name: string = "", mimeType: string = "", size: number = 0, hash: string = "", seed?: number) {
+  constructor(name: string = "", mimeType: string = "", size: number = 0, hash: string = "", seed: number = 0, pieces: number = 0) {
     this.name = name;
     this.mimeType = mimeType;
     this.size = size;
     this.hash = hash;
     this.seed = seed;
+    this.pieces = pieces;
   }
 
   encode(encoder: MessageEncoder): void {
@@ -24,9 +26,8 @@ export class ImageReceiveMessage implements IMessage {
     encoder.encodeString(this.mimeType);
     encoder.encodeUint32(this.size);
     encoder.encodeString(this.hash);
-    if (this.seed != undefined) {
-      encoder.encodeUint32(this.seed);
-    }
+    encoder.encodeUint32(this.seed);
+    encoder.encodeUint16(this.pieces);
   }
 
   decode(decoder: MessageDecoder): void {
@@ -34,8 +35,7 @@ export class ImageReceiveMessage implements IMessage {
     this.mimeType = decoder.decodeString();
     this.size = decoder.decodeUint32();
     this.hash = decoder.decodeString();
-    if (!decoder.done()) {
-      this.seed = decoder.decodeUint32();
-    }
+    this.seed = decoder.decodeUint32();
+    this.pieces = decoder.decodeUint16();
   }
 }

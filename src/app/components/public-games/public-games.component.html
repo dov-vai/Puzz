@@ -3,6 +3,7 @@
     <thead>
     <tr>
       <th>Room title</th>
+      <th>Jigsaw pieces</th>
       <th>Players online</th>
       <th style="text-align: right">
         <button class="button is-primary" (click)="onRefreshRooms()">Refresh</button>
@@ -13,6 +14,7 @@
       @if (publicRooms$ | async; as publicRooms) {
         <tr *ngFor="let room of publicRooms">
           <td>{{ room.Title }}</td>
+          <td>{{ room.Pieces }}</td>
           <td>{{ room.PlayerCount }}</td>
           <td>
             <button class="button is-primary" (click)="onJoin(room.Id)">Join</button>

@@ -14,7 +14,7 @@ export class JigsawScene extends PIXI.Container implements IScene {
   private jigsawManager: JigsawManager;
   private worldSize: number;
 
-  constructor(private peerManager: PeerManagerService, private image?: File) {
+  constructor(private peerManager: PeerManagerService, private image?: File, pieces?: number) {
     super();
     this.worldSize = 5000;
     this.prevWorldPointer = new PIXI.Point();
@@ -26,7 +26,7 @@ export class JigsawScene extends PIXI.Container implements IScene {
     this.world = new PIXI.Graphics().rect(0, 0, this.worldSize, this.worldSize).fill({color: 0x424769});
     this.worldContainer.addChild(this.world);
     this.addChild(this.worldContainer);
-    this.jigsawManager = new JigsawManager(this.worldContainer, this.world, this.image);
+    this.jigsawManager = new JigsawManager(this.worldContainer, this.world, this.image, pieces);
     this.setupP2P();
   }
 

@@ -3,6 +3,7 @@ import {JigsawGenerator} from "./jigsaw-generator";
 import {SceneManager} from "../scene-manager";
 import {JigsawNeighbour, JigsawPiece} from "./jigsaw-piece";
 import {PixiUtils} from "../utils";
+import {JigsawEstimator} from "./jigsaw-estimator";
 
 export class JigsawPieceManager {
   private _worldContainer: PIXI.Container;
@@ -20,7 +21,7 @@ export class JigsawPieceManager {
     return this._tileWidth;
   }
 
-  get tileHeight(){
+  get tileHeight() {
     return this._tileHeight;
   }
 
@@ -38,10 +39,11 @@ export class JigsawPieceManager {
     this.random = Math.random;
   }
 
-  public loadPieces(image: PIXI.Texture, seed: number) {
+  public loadPieces(image: PIXI.Texture, seed: number, pieces: number) {
     this.random = PixiUtils.splitMix32(seed);
-    this._tileWidth = 100;
-    this._tileHeight = 100;
+    const estimated = JigsawEstimator.estimate(image.width, image.height, pieces, "backwards");
+    this._tileWidth = estimated.pieceWidth;
+    this._tileHeight = estimated.pieceHeight;
     const generator = new JigsawGenerator(image, this.tileWidth, this.tileHeight, this.random);
     this._taggedPieces = generator.generatePieces(5, 0x000000, SceneManager.appRenderer);
     const worldMidpoint = new PIXI.Point(this.world.width / 2, this.world.height / 2);
@@ -52,8 +54,8 @@ export class JigsawPieceManager {
     const shuffledPieces = [...this.taggedPieces];
     PixiUtils.shuffle(shuffledPieces, this.random)
     const startPoint = new PIXI.Point(
-      position.x - image.width/2,
-      position.y - image.height/2 - this._tileHeight,
+      position.x - image.width / 2,
+      position.y - image.height / 2 - this._tileHeight,
     );
     const offset = Math.max(this.tileWidth, this.tileHeight) / 2;
     const columns = Math.ceil(image.width / this.tileWidth);

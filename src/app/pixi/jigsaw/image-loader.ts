@@ -10,12 +10,14 @@ import {MessageType} from "../../network/common";
 export interface JigsawImage {
   texture: PIXI.Texture;
   seed: number;
+  pieces: number;
 }
 
 export class ImageLoader {
   private image?: File;
   private texture?: PIXI.Texture;
   private seed?: number;
+  private pieces?: number;
   private _uri?: string;
   private imageBuffer!: Uint8Array;
   private bufferOffset!: number;
@@ -27,7 +29,7 @@ export class ImageLoader {
     return this._uri;
   }
 
-  public async loadImage(image: File): Promise<JigsawImage> {
+  public async loadImage(image: File, pieces: number): Promise<JigsawImage> {
     this.image = image;
     this._uri = URL.createObjectURL(image);
     const texture = await PIXI.Assets.load({
@@ -38,7 +40,8 @@ export class ImageLoader {
     this.texture = texture;
     const seed = (Math.random() * 2 ** 32) >>> 0;
     this.seed = seed;
-    return {texture, seed};
+    this.pieces = pieces;
+    return {texture, seed, pieces};
   }
 
   public handle(message: any, peer: Peer) {
@@ -78,15 +81,14 @@ export class ImageLoader {
     this.imageBuffer = new Uint8Array(imageReceive.size);
     this.bufferOffset = 0;
     this.mimeType = imageReceive.mimeType;
-    if (imageReceive.seed != undefined) {
-      this.seed = imageReceive.seed;
-    }
+    this.seed = imageReceive.seed;
+    this.pieces = imageReceive.pieces;
   }
 
   private handleImageRequestMessage(peer: Peer) {
     this.image?.arrayBuffer().then(buffer => {
       const encoder = new MessageEncoder();
-      const imageReceive = new ImageReceiveMessage("image", this.image?.type, buffer.byteLength, "", this.seed);
+      const imageReceive = new ImageReceiveMessage("image", this.image?.type, buffer.byteLength, "", this.seed, this.pieces);
       imageReceive.encode(encoder);
       peer.sendMessage(encoder.getBuffer());
 
@@ -125,7 +127,7 @@ export class ImageLoader {
       loadParser: "loadTextures"
     }).then((texture: PIXI.Texture) => {
       this.texture = texture;
-      this.resolveImage({texture: texture, seed: this.seed!});
+      this.resolveImage({texture: texture, seed: this.seed!, pieces: this.pieces!});
     })
   }
 }

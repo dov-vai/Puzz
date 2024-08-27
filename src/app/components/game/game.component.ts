@@ -15,6 +15,7 @@ import {NgIf} from "@angular/common";
 
 export interface GameExtras {
   image?: File;
+  pieces?: number;
 }
 
 @Component({
@@ -46,7 +47,7 @@ export class GameComponent implements AfterViewInit, OnDestroy {
   ngAfterViewInit() {
     this.ngZone.runOutsideAngular(() => {
       (async () => {
-        await this.game.init(this.gameCanvas.nativeElement, this.extras?.image);
+        await this.game.init(this.gameCanvas.nativeElement, this.extras?.image, this.extras?.pieces);
       })();
     });
   }

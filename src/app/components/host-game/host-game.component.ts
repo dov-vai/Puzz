@@ -24,7 +24,7 @@ export class HostGameComponent implements OnInit, OnDestroy {
   router = inject(Router);
   subscription!: Subscription;
   img?: HTMLImageElement;
-  estimatedPieces?: {rows: number, columns: number, pieceWidth: number, pieceHeight: number};
+  estimatedPieces?: { rows: number, columns: number, pieceWidth: number, pieceHeight: number };
 
   ngOnInit(): void {
     this.subscription = this.websocket.messages$.subscribe(this.onMessage.bind(this));
@@ -60,16 +60,16 @@ export class HostGameComponent implements OnInit, OnDestroy {
     return this.roomForm.get('image');
   }
 
-  get pieces(){
+  get pieces() {
     return this.roomForm.get('pieces');
   }
 
-  setPieces(pieces: number){
+  setPieces(pieces: number) {
     this.roomForm.patchValue({pieces: pieces});
     this.calculatePieces();
   }
 
-  onPiecesChanged(event: Event){
+  onPiecesChanged(event: Event) {
     this.calculatePieces();
   }
 
@@ -86,15 +86,20 @@ export class HostGameComponent implements OnInit, OnDestroy {
     }
   }
 
-  private calculatePieces(){
-    if (this.img?.complete && this.pieces?.valid){
+  private calculatePieces() {
+    if (this.img?.complete && this.pieces?.valid) {
       const pieces = this.pieces?.value;
       this.estimatedPieces = JigsawEstimator.estimate(this.img.width, this.img.height, Number(pieces), "backwards");
     }
   }
 
   onSubmit() {
-    this.websocket.sendMessage({Type: "host", Title: this.title?.value, Public: this.publicRoom?.value});
+    this.websocket.sendMessage({
+      Type: "host",
+      Title: this.title?.value,
+      Pieces: this.pieces?.value,
+      Public: this.publicRoom?.value
+    });
   }
 
   onMessage(message: any) {
@@ -103,7 +108,7 @@ export class HostGameComponent implements OnInit, OnDestroy {
         console.log("connected succesfully, SocketId:", message.SocketId);
 
         // TODO: image verification
-        const extras: GameExtras = {image: this.image!.value!}
+        const extras: GameExtras = {image: this.image!.value!, pieces: Number(this.pieces!.value)}
         this.router.navigate(['play', message.RoomId], {state: extras});
         break;
       }
@@ -114,8 +119,8 @@ export class HostGameComponent implements OnInit, OnDestroy {
     }
   }
 
-  private revokeImageUrl(){
-    if (this.img){
+  private revokeImageUrl() {
+    if (this.img) {
       URL.revokeObjectURL(this.img.src);
     }
   }

@@ -7,6 +7,7 @@ import {Router} from "@angular/router";
 interface PublicRoom {
   Id: string,
   Title: string,
+  Pieces: number,
   PlayerCount: number
 }
 
