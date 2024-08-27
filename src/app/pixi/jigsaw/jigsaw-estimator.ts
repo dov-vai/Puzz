@@ -36,11 +36,16 @@ export class JigsawEstimator {
       }
     }
 
+    // FIXME: strange bug as the sides switch places with no apparent reaason
+    const max = Math.max(optimalSides[0], optimalSides[1]);
+    const min = Math.min(optimalSides[0], optimalSides[1]);
+    const rows = height > width ? max : min;
+    const columns = width > height ? max : min;
     return {
-      rows: optimalSides[0],
-      columns: optimalSides[1],
-      pieceWidth: width / optimalSides[1],
-      pieceHeight: height / optimalSides[0]
+      rows: rows,
+      columns: columns,
+      pieceWidth: width / columns,
+      pieceHeight: height / rows
     }
   }
 
