@@ -1,8 +1,11 @@
 import {IScene, SceneManager} from "../scene-manager";
 import * as PIXI from "pixi.js";
+import {sound} from "@pixi/sound";
 import {InfinityCanvas} from "../infinity-canvas";
 import {PeerManagerService} from "../../services/peer-manager/peer-manager.service";
 import {JigsawManager} from "./jigsaw-manager";
+
+export const SNAP_SOUND = 'snap';
 
 export class JigsawScene extends PIXI.Container implements IScene {
   private worldContainer: InfinityCanvas;
@@ -16,6 +19,7 @@ export class JigsawScene extends PIXI.Container implements IScene {
     this.worldSize = 5000;
     this.prevWorldPointer = new PIXI.Point();
 
+    sound.add(SNAP_SOUND, 'snap.wav');
     this.worldContainer = new InfinityCanvas(SceneManager.appRenderer.events);
     this.worldContainer.sortableChildren = true;
     this.centerWorld();

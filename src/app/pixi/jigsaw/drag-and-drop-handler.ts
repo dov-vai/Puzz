@@ -5,6 +5,8 @@ import {JigsawPieceManager} from "./jigsaw-piece-manager";
 import {PlayerManager} from "./player-manager";
 import {SnapMessage} from "../../network/protocol/snap-message";
 import {MessageEncoder} from "../../network/message-encoder";
+import {SNAP_SOUND} from "./jigsaw-scene";
+import {sound} from "@pixi/sound";
 
 export class DragAndDropHandler {
   private _dragTarget: JigsawPiece | null;
@@ -113,6 +115,7 @@ export class DragAndDropHandler {
       const distance = PixiUtils.getDistanceToNeighbourTab(this.manager.world, piece!, neighbour, wiggleRoom, direction);
       if (distance <= this.manager.tileWidth / 2) {
         this.manager.handlePieceSnap(piece, piece.neighbours[i]);
+        sound.play(SNAP_SOUND);
         // FIXME: an extra dependancy just for this, maybe there's a better way?
         const encoder = new MessageEncoder();
         // FIXME: neighbour piece id instead of the array index
