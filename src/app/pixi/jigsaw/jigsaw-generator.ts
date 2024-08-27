@@ -11,16 +11,18 @@ export interface Shape {
 export class JigsawGenerator {
   private texture: PIXI.Texture;
   private tileWidth: number;
+  private tileHeight: number;
 
-  constructor(texture: PIXI.Texture, tileWidth: number, private random: () => number) {
+  constructor(texture: PIXI.Texture, tileWidth: number, tileHeight: number, private random: () => number) {
     this.texture = texture;
     this.tileWidth = tileWidth;
+    this.tileHeight = tileHeight;
   }
 
   public getMask(
-    tileRatio: number,
+    widthRatio: number,
+    heightRatio: number,
     shape: Shape,
-    tileWidth: number
   ): PIXI.Graphics {
 
     const curvePoints: number[] = [
@@ -38,73 +40,73 @@ export class JigsawGenerator {
     // Top
     for (let i = 0; i < curvePoints.length / 6; i++) {
       const p1 = new PIXI.Point(
-        topLeftEdge.x + curvePoints[i * 6 + 0] * tileRatio,
-        topLeftEdge.y + shape.topTab! * curvePoints[i * 6 + 1] * tileRatio
+        topLeftEdge.x + curvePoints[i * 6 + 0] * widthRatio,
+        topLeftEdge.y + shape.topTab! * curvePoints[i * 6 + 1] * widthRatio
       );
       const p2 = new PIXI.Point(
-        topLeftEdge.x + curvePoints[i * 6 + 2] * tileRatio,
-        topLeftEdge.y + shape.topTab! * curvePoints[i * 6 + 3] * tileRatio
+        topLeftEdge.x + curvePoints[i * 6 + 2] * widthRatio,
+        topLeftEdge.y + shape.topTab! * curvePoints[i * 6 + 3] * widthRatio
       );
       const p3 = new PIXI.Point(
-        topLeftEdge.x + curvePoints[i * 6 + 4] * tileRatio,
-        topLeftEdge.y + shape.topTab! * curvePoints[i * 6 + 5] * tileRatio
+        topLeftEdge.x + curvePoints[i * 6 + 4] * widthRatio,
+        topLeftEdge.y + shape.topTab! * curvePoints[i * 6 + 5] * widthRatio
       );
 
       mask.bezierCurveTo(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y);
     }
 
     // Right
-    const topRightEdge = new PIXI.Point(topLeftEdge.x + tileWidth, topLeftEdge.y);
+    const topRightEdge = new PIXI.Point(topLeftEdge.x + this.tileWidth, topLeftEdge.y);
     for (let i = 0; i < curvePoints.length / 6; i++) {
       const p1 = new PIXI.Point(
-        topRightEdge.x - shape.rightTab! * curvePoints[i * 6 + 1] * tileRatio,
-        topRightEdge.y + curvePoints[i * 6 + 0] * tileRatio
+        topRightEdge.x - shape.rightTab! * curvePoints[i * 6 + 1] * heightRatio,
+        topRightEdge.y + curvePoints[i * 6 + 0] * heightRatio
       );
       const p2 = new PIXI.Point(
-        topRightEdge.x - shape.rightTab! * curvePoints[i * 6 + 3] * tileRatio,
-        topRightEdge.y + curvePoints[i * 6 + 2] * tileRatio
+        topRightEdge.x - shape.rightTab! * curvePoints[i * 6 + 3] * heightRatio,
+        topRightEdge.y + curvePoints[i * 6 + 2] * heightRatio
       );
       const p3 = new PIXI.Point(
-        topRightEdge.x - shape.rightTab! * curvePoints[i * 6 + 5] * tileRatio,
-        topRightEdge.y + curvePoints[i * 6 + 4] * tileRatio
+        topRightEdge.x - shape.rightTab! * curvePoints[i * 6 + 5] * heightRatio,
+        topRightEdge.y + curvePoints[i * 6 + 4] * heightRatio
       );
 
       mask.bezierCurveTo(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y);
     }
 
     // Bottom
-    const bottomRightEdge = new PIXI.Point(topRightEdge.x, topRightEdge.y + tileWidth);
+    const bottomRightEdge = new PIXI.Point(topRightEdge.x, topRightEdge.y + this.tileHeight);
     for (let i = 0; i < curvePoints.length / 6; i++) {
       const p1 = new PIXI.Point(
-        bottomRightEdge.x - curvePoints[i * 6 + 0] * tileRatio,
-        bottomRightEdge.y - shape.bottomTab! * curvePoints[i * 6 + 1] * tileRatio
+        bottomRightEdge.x - curvePoints[i * 6 + 0] * widthRatio,
+        bottomRightEdge.y - shape.bottomTab! * curvePoints[i * 6 + 1] * widthRatio
       );
       const p2 = new PIXI.Point(
-        bottomRightEdge.x - curvePoints[i * 6 + 2] * tileRatio,
-        bottomRightEdge.y - shape.bottomTab! * curvePoints[i * 6 + 3] * tileRatio
+        bottomRightEdge.x - curvePoints[i * 6 + 2] * widthRatio,
+        bottomRightEdge.y - shape.bottomTab! * curvePoints[i * 6 + 3] * widthRatio
       );
       const p3 = new PIXI.Point(
-        bottomRightEdge.x - curvePoints[i * 6 + 4] * tileRatio,
-        bottomRightEdge.y - shape.bottomTab! * curvePoints[i * 6 + 5] * tileRatio
+        bottomRightEdge.x - curvePoints[i * 6 + 4] * widthRatio,
+        bottomRightEdge.y - shape.bottomTab! * curvePoints[i * 6 + 5] * widthRatio
       );
 
       mask.bezierCurveTo(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y);
     }
 
     // Left
-    const bottomLeftEdge = new PIXI.Point(bottomRightEdge.x - tileWidth, bottomRightEdge.y);
+    const bottomLeftEdge = new PIXI.Point(bottomRightEdge.x - this.tileWidth, bottomRightEdge.y);
     for (let i = 0; i < curvePoints.length / 6; i++) {
       const p1 = new PIXI.Point(
-        bottomLeftEdge.x + shape.leftTab! * curvePoints[i * 6 + 1] * tileRatio,
-        bottomLeftEdge.y - curvePoints[i * 6 + 0] * tileRatio
+        bottomLeftEdge.x + shape.leftTab! * curvePoints[i * 6 + 1] * heightRatio,
+        bottomLeftEdge.y - curvePoints[i * 6 + 0] * heightRatio
       );
       const p2 = new PIXI.Point(
-        bottomLeftEdge.x + shape.leftTab! * curvePoints[i * 6 + 3] * tileRatio,
-        bottomLeftEdge.y - curvePoints[i * 6 + 2] * tileRatio
+        bottomLeftEdge.x + shape.leftTab! * curvePoints[i * 6 + 3] * heightRatio,
+        bottomLeftEdge.y - curvePoints[i * 6 + 2] * heightRatio
       );
       const p3 = new PIXI.Point(
-        bottomLeftEdge.x + shape.leftTab! * curvePoints[i * 6 + 5] * tileRatio,
-        bottomLeftEdge.y - curvePoints[i * 6 + 4] * tileRatio
+        bottomLeftEdge.x + shape.leftTab! * curvePoints[i * 6 + 5] * heightRatio,
+        bottomLeftEdge.y - curvePoints[i * 6 + 4] * heightRatio
       );
 
       mask.bezierCurveTo(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y);
@@ -168,13 +170,14 @@ export class JigsawGenerator {
 
   generatePieces(borderWidth: number, borderColor: number, renderer: PIXI.Renderer) {
     const columns = Math.ceil(this.texture.width / this.tileWidth);
-    const rows = Math.ceil(this.texture.height / this.tileWidth);
+    const rows = Math.ceil(this.texture.height / this.tileHeight);
 
     const pieces: JigsawPiece[] = new Array(columns * rows);
     const shapes = this.getRandomShapes(columns, rows);
 
     // scales the bezier curve
-    const tileRatio = this.tileWidth / 100.0;
+    const widthRatio = this.tileWidth / 100.0;
+    const heightRatio = this.tileHeight / 100.0;
 
     for (let y = 0; y < rows; y++) {
       for (let x = 0; x < columns; x++) {
@@ -183,10 +186,10 @@ export class JigsawGenerator {
         const shape = shapes[id];
         const pieceTexture = new PIXI.Texture({
           source: this.texture.source,
-          frame: new PIXI.Rectangle(x * this.tileWidth, y * this.tileWidth, this.tileWidth, this.tileWidth)
+          frame: new PIXI.Rectangle(x * this.tileWidth, y * this.tileHeight, this.tileWidth, this.tileHeight)
         });
 
-        const maskedPiece = this.getMask(tileRatio, shape, this.tileWidth)
+        const maskedPiece = this.getMask(widthRatio, heightRatio, shape)
           .stroke({width: borderWidth, color: borderColor})
           .fill({texture: pieceTexture});
 

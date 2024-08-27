@@ -9,6 +9,7 @@ export class JigsawPieceManager {
   private _world: PIXI.Graphics;
   private _taggedPieces!: JigsawPiece[];
   private _tileWidth!: number;
+  private _tileHeight!: number;
   private random: () => number;
 
   get taggedPieces() {
@@ -17,6 +18,10 @@ export class JigsawPieceManager {
 
   get tileWidth() {
     return this._tileWidth;
+  }
+
+  get tileHeight(){
+    return this._tileHeight;
   }
 
   get worldContainer() {
@@ -36,7 +41,8 @@ export class JigsawPieceManager {
   public loadPieces(image: PIXI.Texture, seed: number) {
     this.random = PixiUtils.splitMix32(seed);
     this._tileWidth = 100;
-    const generator = new JigsawGenerator(image, this.tileWidth, this.random);
+    this._tileHeight = 100;
+    const generator = new JigsawGenerator(image, this.tileWidth, this.tileHeight, this.random);
     this._taggedPieces = generator.generatePieces(5, 0x000000, SceneManager.appRenderer);
     const worldMidpoint = new PIXI.Point(this.world.width / 2, this.world.height / 2);
     this.placePieces(image, worldMidpoint);
@@ -47,15 +53,15 @@ export class JigsawPieceManager {
     PixiUtils.shuffle(shuffledPieces, this.random)
     const startPoint = new PIXI.Point(
       position.x - image.width/2,
-      position.y - image.height/2 - this.tileWidth,
+      position.y - image.height/2 - this._tileHeight,
     );
-    const offset = 50;
+    const offset = Math.max(this.tileWidth, this.tileHeight) / 2;
     const columns = Math.ceil(image.width / this.tileWidth);
-    const rows = Math.ceil(image.height / this.tileWidth);
+    const rows = Math.ceil(image.height / this.tileHeight);
     // recalculate columns and rows needed with piece offset
     const adjColumns = Math.ceil(image.width / (this.tileWidth + offset));
-    const adjRows = Math.ceil(image.height / (this.tileWidth + offset));
-    const positions = this.rectangularSpiral(columns * rows, this.tileWidth + offset, startPoint.x, startPoint.y, adjColumns, adjRows);
+    const adjRows = Math.ceil(image.height / (this.tileHeight + offset));
+    const positions = this.rectangularSpiral(columns * rows, Math.max(this.tileWidth, this.tileHeight) + offset, startPoint.x, startPoint.y, adjColumns, adjRows);
     for (let y = 0; y < rows; y++) {
       for (let x = 0; x < columns; x++) {
         const id = y * columns + x;
@@ -131,11 +137,11 @@ export class JigsawPieceManager {
 
     switch (jigsawNeighbour.direction) {
       case "top": {
-        target.position.set(neighbourPivot.x, neighbourPivot.y + this.tileWidth);
+        target.position.set(neighbourPivot.x, neighbourPivot.y + this.tileHeight);
         break;
       }
       case "bottom": {
-        target.position.set(neighbourPivot.x, neighbourPivot.y - this.tileWidth);
+        target.position.set(neighbourPivot.x, neighbourPivot.y - this.tileHeight);
         break;
       }
       case "left": {
