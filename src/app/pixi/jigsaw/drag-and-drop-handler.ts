@@ -111,9 +111,9 @@ export class DragAndDropHandler {
         continue;
       }
 
-      const wiggleRoom = this.manager.tileWidth / 4;
-      const distance = PixiUtils.getDistanceToNeighbourTab(this.manager.world, piece!, neighbour, wiggleRoom, direction);
-      if (distance <= this.manager.tileWidth / 2) {
+      const {pieceSnapPoint, neighbourSnapPoint} = this.getSnapPoints(piece, neighbour, direction);
+      const distance = PixiUtils.getDistance(pieceSnapPoint, neighbourSnapPoint);
+      if (distance <= this.manager.tileWidth / 16) {
         this.manager.handlePieceSnap(piece, piece.neighbours[i]);
         sound.play(SNAP_SOUND);
         // FIXME: an extra dependancy just for this, maybe there's a better way?
@@ -126,5 +126,21 @@ export class DragAndDropHandler {
       }
     }
     return false;
+  }
+
+  private getSnapPoints(piece: JigsawPiece, neighbour: JigsawPiece, direction: "top" | "bottom" | "left" | "right") {
+    const midpoint = new PIXI.Point(this.manager.tileWidth / 2, this.manager.tileHeight / 2);
+    const positions = {
+      top: [new PIXI.Point(midpoint.x, 0), new PIXI.Point(midpoint.x, this.manager.tileHeight)],
+      bottom: [new PIXI.Point(midpoint.x, this.manager.tileHeight), new PIXI.Point(midpoint.x, 0)],
+      left: [new PIXI.Point(0, midpoint.y), new PIXI.Point(this.manager.tileWidth, midpoint.y)],
+      right: [new PIXI.Point(this.manager.tileWidth, midpoint.y), new PIXI.Point(0, midpoint.y)]
+    };
+
+    const [piecePos, neighbourPos] = positions[direction];
+    const pieceSnapPoint = this.manager.world.toLocal(piece.addAlignmentPivot(piecePos), piece);
+    const neighbourSnapPoint = this.manager.world.toLocal(neighbour.addAlignmentPivot(neighbourPos), neighbour);
+
+    return {pieceSnapPoint, neighbourSnapPoint};
   }
 }

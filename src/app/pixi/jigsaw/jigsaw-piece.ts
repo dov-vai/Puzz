@@ -39,5 +39,9 @@ export class JigsawPiece extends PIXI.Sprite {
     this.position.copyFrom(this._alignmentPivot);
   }
 
+  addAlignmentPivot(point: PIXI.Point) {
+    return new PIXI.Point(point.x + this.alignmentPivot.x, point.y + this.alignmentPivot.y);
+  }
+
 
 }
