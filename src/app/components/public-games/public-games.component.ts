@@ -43,7 +43,7 @@ export class PublicGamesComponent implements OnInit, OnDestroy {
       }
       case "connected": {
         console.log("connected successfully SocketId: ", message.SocketId);
-        this.router.navigate(['play']);
+        this.router.navigate(['play', message.RoomId]);
         break;
       }
       default: {
