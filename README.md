@@ -1,27 +1,47 @@
 # Puzz
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 18.1.2.
+Peer-To-Peer jigsaw game built using Angular 18 and WebRTC.
 
-## Development server
+ASP.NET Core API available [here](https://github.com/dov-vai/PuzzApi).
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The application will automatically reload if you change any of the source files.
+# Live demo
 
-## Code scaffolding
+Live demo can be accessed here: [puzz.dov.lt](https://puzz.dov.lt)
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
+# Building
 
-## Build
+Run:
+```bash
+npm i
+```
+in the project root directory to install the dependencies.
 
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory.
 
-## Running unit tests
+Install Angular CLI
+```bash
+npm install -g @angular/cli
+```
 
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
+Then run:
+```bash
+ng build
+```
+to build the project. It will then be available in the `dist/` folder in the root directory.
 
-## Running end-to-end tests
 
-Run `ng e2e` to execute the end-to-end tests via a platform of your choice. To use this command, you need to first add a package that implements end-to-end testing capabilities.
+# Configuring
 
-## Further help
+[environments.ts](src/environments/environment.ts) contains the configuration for production.
 
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+[environments.development.ts](src/environments/environment.development.ts) contains the configuration for development.
+
+Here should be set both the API and WebSocket URLs.
+
+# Contributing
+Pull requests are always welcome.
+
+# LICENSE
+
+GNU General Public License 3.0 or later.
+
+See [LICENSE](LICENSE) for the full text.
