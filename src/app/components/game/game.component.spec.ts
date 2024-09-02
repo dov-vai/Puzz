@@ -1,9 +1,9 @@
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 
-import {GameComponent, GameExtras} from './game.component';
+import {GameComponent} from './game.component';
 import {GameService} from "../../services/game/game.service";
 import {WebSocketService} from "../../services/web-socket/web-socket.service";
-import {provideRouter, Router, UrlTree} from "@angular/router";
+import {provideRouter} from "@angular/router";
 
 describe('GameComponent', () => {
   let component: GameComponent;
@@ -59,7 +59,7 @@ describe('GameComponent', () => {
 
   it('should send a disconnect message on onBack()', () => {
     component.onBack();
-    expect(webSocketServiceMock.sendMessage).toHaveBeenCalledWith({ Type: 'disconnect' });
+    expect(webSocketServiceMock.sendMessage).toHaveBeenCalledWith({Type: 'disconnect'});
   });
 
   it('should destroy the game on ngOnDestroy', () => {
