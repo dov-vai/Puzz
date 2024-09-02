@@ -4,7 +4,7 @@ import {Observable, Subject, Subscription} from "rxjs";
 import {AsyncPipe, NgForOf, NgIf} from "@angular/common";
 import {Router} from "@angular/router";
 
-interface PublicRoom {
+export interface PublicRoom {
   Id: string,
   Title: string,
   Pieces: number,
