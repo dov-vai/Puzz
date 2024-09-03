@@ -3,7 +3,7 @@ import {WebSocketService} from "../../services/web-socket/web-socket.service";
 import {Observable, Subject, Subscription} from "rxjs";
 import {AsyncPipe, NgForOf, NgIf} from "@angular/common";
 import {Router} from "@angular/router";
-import {Join, PublicRoom, PublicRooms, Types} from "../../services/web-socket/types";
+import {PublicRoom, PublicRooms, Types} from "../../services/web-socket/types";
 
 @Component({
   selector: 'app-public-games',
@@ -35,11 +35,6 @@ export class PublicGamesComponent implements OnInit, OnDestroy {
         this.publicRoomsSubject$.next(message.Rooms as PublicRoom[]);
         break;
       }
-      case Types.Connected: {
-        console.log("connected successfully SocketId: ", message.SocketId);
-        this.router.navigate(['play', message.RoomId]);
-        break;
-      }
       default: {
         break;
       }
@@ -47,8 +42,7 @@ export class PublicGamesComponent implements OnInit, OnDestroy {
   }
 
   onJoin(roomId: string) {
-    const join: Join = {Type: "join", RoomId: roomId};
-    this.websocket.sendMessage(join);
+    this.router.navigate(['play', roomId]);
   }
 
   onRefreshRooms() {

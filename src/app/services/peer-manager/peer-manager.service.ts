@@ -45,6 +45,10 @@ export class PeerManagerService {
   }
 
   public destroy() {
+    if (!this.peers){
+      return;
+    }
+
     for (const [key, peer] of this.peers) {
       peer.peer.close();
       this.peers.delete(key);

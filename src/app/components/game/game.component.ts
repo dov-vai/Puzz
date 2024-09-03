@@ -9,10 +9,11 @@ import {
   ViewChild
 } from '@angular/core';
 import {GameService} from "../../services/game/game.service";
-import {Router, RouterLink} from "@angular/router";
+import {ActivatedRoute, Router, RouterLink} from "@angular/router";
 import {WebSocketService} from "../../services/web-socket/web-socket.service";
 import {NgIf} from "@angular/common";
-import {Disconnect} from "../../services/web-socket/types";
+import {Subscription} from "rxjs";
+import {Disconnect, Join, Types} from "../../services/web-socket/types";
 
 export interface GameExtras {
   image?: File;
@@ -34,23 +35,54 @@ export class GameComponent implements AfterViewInit, OnDestroy {
   game = inject(GameService);
   ngZone = inject(NgZone);
   websocket = inject(WebSocketService);
+  activatedRoute = inject(ActivatedRoute);
+  subscription?: Subscription;
   extras?: GameExtras;
   showImage: boolean = false;
   imageUri?: string;
+  @ViewChild("gameCanvas")
+  gameCanvas!: ElementRef<HTMLCanvasElement>;
 
   constructor(private router: Router) {
     this.extras = this.router.getCurrentNavigation()?.extras.state as GameExtras;
   }
 
-  @ViewChild("gameCanvas")
-  gameCanvas!: ElementRef<HTMLCanvasElement>;
+  ngAfterViewInit(): void {
+    if (this.extras) {
+      this.startGame();
+      return;
+    }
 
-  ngAfterViewInit() {
+    const roomId = this.activatedRoute.snapshot.paramMap.get("id");
+
+    if (!roomId) {
+      return;
+    }
+
+    this.subscription = this.websocket.messages$.subscribe(this.onMessage.bind(this));
+    this.websocket.connect();
+    const join: Join = {RoomId: roomId, Type: "join"};
+    this.websocket.sendMessage(join);
+  }
+
+  startGame() {
     this.ngZone.runOutsideAngular(() => {
       (async () => {
         await this.game.init(this.gameCanvas.nativeElement, this.extras?.image, this.extras?.pieces);
       })();
     });
+  }
+
+  onMessage(message: any) {
+    switch (message.Type) {
+      case Types.Connected: {
+        this.startGame();
+        break;
+      }
+      default: {
+        break;
+      }
+    }
   }
 
   onBack() {
@@ -70,5 +102,6 @@ export class GameComponent implements AfterViewInit, OnDestroy {
 
   ngOnDestroy() {
     this.game.destroy();
+    this.subscription?.unsubscribe();
   }
 }
