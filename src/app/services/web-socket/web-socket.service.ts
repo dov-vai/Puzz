@@ -15,7 +15,6 @@ export const WEBSOCKET_URL = environment.webSocketUrl;
 export class WebSocketService {
   private socket$!: WebSocketSubject<any>;
   private messagesSubject$ = new Subject<any>();
-  // The switchAll() operator unsubscribes from the previous observable whenever a new observable is emitted and subscribes to the new one.
   public messages$ = this.messagesSubject$.asObservable();
 
   public connect() {

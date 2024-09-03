@@ -6,6 +6,7 @@ import {NgClass, NgIf} from "@angular/common";
 import {Subscription} from "rxjs";
 import {GameExtras} from "../game/game.component";
 import {JigsawEstimator} from "../../pixi/jigsaw/jigsaw-estimator";
+import {Host, Types} from "../../services/web-socket/types";
 
 @Component({
   selector: 'app-host-game',
@@ -94,17 +95,18 @@ export class HostGameComponent implements OnInit, OnDestroy {
   }
 
   onSubmit() {
-    this.websocket.sendMessage({
+    const host: Host = {
       Type: "host",
-      Title: this.title?.value,
-      Pieces: this.pieces?.value,
-      Public: this.publicRoom?.value
-    });
+      Title: this.title?.value!,
+      Pieces: this.pieces?.value!,
+      Public: this.publicRoom?.value!
+    };
+    this.websocket.sendMessage(host);
   }
 
   onMessage(message: any) {
     switch (message.Type) {
-      case "connected": {
+      case Types.Connected: {
         console.log("connected succesfully, SocketId:", message.SocketId);
 
         // TODO: image verification

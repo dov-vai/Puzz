@@ -3,13 +3,7 @@ import {WebSocketService} from "../../services/web-socket/web-socket.service";
 import {Observable, Subject, Subscription} from "rxjs";
 import {AsyncPipe, NgForOf, NgIf} from "@angular/common";
 import {Router} from "@angular/router";
-
-export interface PublicRoom {
-  Id: string,
-  Title: string,
-  Pieces: number,
-  PlayerCount: number
-}
+import {Join, PublicRoom, PublicRooms, Types} from "../../services/web-socket/types";
 
 @Component({
   selector: 'app-public-games',
@@ -32,16 +26,16 @@ export class PublicGamesComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.subscription = this.websocket.messages$.subscribe(this.onMessage.bind(this));
     this.websocket.connect();
-    this.websocket.sendMessage({Type: "publicRooms"})
+    this.onRefreshRooms();
   }
 
   onMessage(message: any) {
     switch (message.Type) {
-      case "publicRooms": {
+      case Types.PublicRooms: {
         this.publicRoomsSubject$.next(message.Rooms as PublicRoom[]);
         break;
       }
-      case "connected": {
+      case Types.Connected: {
         console.log("connected successfully SocketId: ", message.SocketId);
         this.router.navigate(['play', message.RoomId]);
         break;
@@ -53,11 +47,13 @@ export class PublicGamesComponent implements OnInit, OnDestroy {
   }
 
   onJoin(roomId: string) {
-    this.websocket.sendMessage({Type: "join", RoomId: roomId});
+    const join: Join = {Type: "join", RoomId: roomId};
+    this.websocket.sendMessage(join);
   }
 
   onRefreshRooms() {
-    this.websocket.sendMessage({Type: "publicRooms"})
+    const publicRooms: PublicRooms = {Type: "publicRooms"};
+    this.websocket.sendMessage(publicRooms);
   }
 
   ngOnDestroy(): void {

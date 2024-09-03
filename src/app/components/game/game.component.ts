@@ -12,6 +12,7 @@ import {GameService} from "../../services/game/game.service";
 import {Router, RouterLink} from "@angular/router";
 import {WebSocketService} from "../../services/web-socket/web-socket.service";
 import {NgIf} from "@angular/common";
+import {Disconnect} from "../../services/web-socket/types";
 
 export interface GameExtras {
   image?: File;
@@ -53,7 +54,8 @@ export class GameComponent implements AfterViewInit, OnDestroy {
   }
 
   onBack() {
-    this.websocket.sendMessage({Type: "disconnect"});
+    const disconnect: Disconnect = {Type: "disconnect"}
+    this.websocket.sendMessage(disconnect);
   }
 
   previewImage() {
