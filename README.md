@@ -37,6 +37,19 @@ to build the project. It will then be available in the `dist/` folder in the roo
 
 Here should be set both the API and WebSocket URLs.
 
+It is also recommended to set up your own TURN (relay) server for the users
+that can't connect directly (P2P) because of network restrictions. Suggested:
+[Coturn](https://github.com/coturn/coturn). 
+
+Add the server in [peer-manager-service.ts](src/app/services/peer-manager/peer-manager.service.ts):
+```typescript
+iceServers: [
+    {urls: 'turn:myturnserver.com', username: "user", credential: "pass"}
+]
+```
+
+Docker configuration soon.
+
 # Contributing
 Pull requests are always welcome.
 
