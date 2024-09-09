@@ -22,7 +22,11 @@
         <span class="icon">
           <img src="user.svg" alt="Profile">
         </span>
-        <span>Login</span>
+        @if (userInfo$ | async; as user) {
+          <span>Hello {{ user.username }}!</span>
+        } @else {
+          <span>Login</span>
+        }
       </button>
     </div>
   </nav>
