@@ -1,6 +1,6 @@
 import {Injectable} from '@angular/core';
 import {HttpClient} from "@angular/common/http";
-import {BehaviorSubject, map, Observable} from "rxjs";
+import {BehaviorSubject, catchError, Observable, switchMap, tap, throwError} from "rxjs";
 import {environment} from "../../../environments/environment";
 import {UserInfo} from "./user-info";
 
@@ -22,8 +22,12 @@ export class AuthService {
 
   login(username: string, password: string): Observable<any> {
     return this.http.post<UserInfo>(API_URL + "/login", {username, password}).pipe(
-      map(response => this.userInfoSubject.next(response)),
+      tap(response => this.userInfoSubject.next(response))
     );
+  }
+
+  private refreshToken() {
+    return this.http.get(API_URL + "/refresh-token");
   }
 
   tryGetUserInfo() {
@@ -31,7 +35,18 @@ export class AuthService {
       return;
     }
 
-    this.http.get<UserInfo>(API_URL + "/user-info").subscribe({
+    this.http.get<UserInfo>(API_URL + "/user-info").pipe(
+      catchError(error => {
+        if (error.status === 401) {
+          return this.refreshToken().pipe(
+            switchMap(() => {
+              return this.http.get<UserInfo>(API_URL + "/user-info");
+            })
+          )
+        }
+        return throwError(() => error);
+      })
+    ).subscribe({
       next: (response) => this.userInfoSubject.next(response),
       error: (error) => {
         if (error.status != 401) {
