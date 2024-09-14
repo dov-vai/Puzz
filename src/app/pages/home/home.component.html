@@ -1,24 +1,23 @@
 <div class="container my-6">
-  <nav class="level">
-    <div class="level-item level-right">
-      <div class="buttons has-addons">
-        <button class="button" [routerLink]="['']" [routerLinkActive]="['is-primary', 'is-selected']"
-                [routerLinkActiveOptions]="{exact: true}">
-      <span class="icon">
-        <img [ngClass]="{'invert-filter': !isRouteActive('')}" class="invert-filter" src="magic-wand.svg"
-             alt="Host game">
-      </span>
-          <span>Host game</span>
-        </button>
-        <button class="button" [routerLink]="['public']" [routerLinkActive]="['is-primary','is-selected']">
-      <span class="icon">
-        <img [ngClass]="{'invert-filter': !isRouteActive('public')}" src="list.svg" alt="Public Rooms">
-      </span>
-          <span>Public rooms</span>
-        </button>
-      </div>
+  <div class="buttons is-justify-content-space-between">
+    <div [style.width.px]="lastElement.offsetWidth"></div>
+    <div>
+      <button class="button" [routerLink]="['']" [routerLinkActive]="['is-primary', 'is-selected']"
+              [routerLinkActiveOptions]="{exact: true}">
+          <span class="icon">
+            <img [ngClass]="{'invert-filter': !isRouteActive('')}" class="invert-filter" src="magic-wand.svg"
+                 alt="Host game">
+          </span>
+        <span>Host game</span>
+      </button>
+      <button class="button" [routerLink]="['public']" [routerLinkActive]="['is-primary','is-selected']">
+          <span class="icon">
+            <img [ngClass]="{'invert-filter': !isRouteActive('public')}" src="list.svg" alt="Public Rooms">
+          </span>
+        <span>Public rooms</span>
+      </button>
     </div>
-    <div class="level-item level-right">
+    <div #lastElement>
       @if (userInfo$ | async; as user) {
         <button class="button" [routerLink]="['profile']" [routerLinkActive]="['is-primary','is-selected']">
           <span class="icon">
@@ -40,7 +39,7 @@
         </button>
       }
     </div>
-  </nav>
+    </div>
   <router-outlet></router-outlet>
 </div>
 
