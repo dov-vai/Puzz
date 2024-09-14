@@ -26,6 +26,12 @@ export class AuthService {
     );
   }
 
+  logout() {
+    return this.http.get(API_URL + "/logout").pipe(
+      tap(() => this.userInfoSubject.next(null))
+    );
+  }
+
   logoutSessions() {
     return this.http.get(API_URL + "/logout-sessions").pipe(
       tap(() => this.userInfoSubject.next(null))

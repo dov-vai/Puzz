@@ -5,29 +5,40 @@
         <button class="button" [routerLink]="['']" [routerLinkActive]="['is-primary', 'is-selected']"
                 [routerLinkActiveOptions]="{exact: true}">
       <span class="icon">
-        <img src="magic-wand.svg" alt="Host game">
+        <img [ngClass]="{'invert-filter': !isRouteActive('')}" class="invert-filter" src="magic-wand.svg"
+             alt="Host game">
       </span>
           <span>Host game</span>
         </button>
         <button class="button" [routerLink]="['public']" [routerLinkActive]="['is-primary','is-selected']">
       <span class="icon">
-        <img src="list.svg" alt="Public Rooms">
+        <img [ngClass]="{'invert-filter': !isRouteActive('public')}" src="list.svg" alt="Public Rooms">
       </span>
           <span>Public rooms</span>
         </button>
       </div>
     </div>
     <div class="level-item level-right">
-      <button class="button" [routerLink]="['login']" [routerLinkActive]="['is-primary','is-selected']">
-        <span class="icon">
-          <img src="user.svg" alt="Profile">
-        </span>
-        @if (userInfo$ | async; as user) {
+      @if (userInfo$ | async; as user) {
+        <button class="button" [routerLink]="['profile']" [routerLinkActive]="['is-primary','is-selected']">
+          <span class="icon">
+            <img [ngClass]="{'invert-filter': !isRouteActive('profile')}" src="user.svg" alt="Profile">
+          </span>
           <span>Hello {{ user.username }}!</span>
-        } @else {
+        </button>
+        <button class="button" (click)="logout()">
+          <span class="icon">
+            <img class="invert-filter" src="exit.svg" alt="Log out">
+          </span>
+        </button>
+      } @else {
+        <button class="button" [routerLink]="['login']" [routerLinkActive]="['is-primary','is-selected']">
+          <span class="icon">
+            <img [ngClass]="{'invert-filter': !isRouteActive('login')}" src="user.svg" alt="Profile">
+          </span>
           <span>Login</span>
-        }
-      </button>
+        </button>
+      }
     </div>
   </nav>
   <router-outlet></router-outlet>
