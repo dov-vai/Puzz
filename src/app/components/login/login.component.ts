@@ -36,7 +36,7 @@ export class LoginComponent {
   login() {
     this.invalid = false;
     this.authService.login(this.username!, this.password!).subscribe({
-      next: (response) => console.log("logged in succesfully"),
+      next: (response) => this.router.navigate(['profile']),
       error: (error) => this.invalid = true,
     });
   }

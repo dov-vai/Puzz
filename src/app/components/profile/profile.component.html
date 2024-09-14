@@ -1,0 +1,9 @@
+<div class="box">
+  @if (userInfo$ | async; as user) {
+    <p>Hello {{ user.username }}!</p>
+
+    <div class="control">
+      <button class="button is-primary" type="button" (click)="logoutSessions()">Log out all sessions</button>
+    </div>
+  }
+</div>

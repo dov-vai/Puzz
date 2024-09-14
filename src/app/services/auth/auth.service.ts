@@ -26,6 +26,12 @@ export class AuthService {
     );
   }
 
+  logoutSessions() {
+    return this.http.get(API_URL + "/logout-sessions").pipe(
+      tap(() => this.userInfoSubject.next(null))
+    );
+  }
+
   private refreshToken() {
     return this.http.get(API_URL + "/refresh-token");
   }

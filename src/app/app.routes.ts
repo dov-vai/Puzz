@@ -6,6 +6,7 @@ import {PublicGamesComponent} from "./components/public-games/public-games.compo
 import {HostGameComponent} from "./components/host-game/host-game.component";
 import {LoginComponent} from "./components/login/login.component";
 import {RegisterComponent} from "./components/register/register.component";
+import {ProfileComponent} from "./components/profile/profile.component";
 
 export const routes: Routes = [
   {
@@ -32,6 +33,11 @@ export const routes: Routes = [
         path: "register",
         title: "Register",
         component: RegisterComponent,
+      },
+      {
+        path: "profile",
+        title: "Profile",
+        component: ProfileComponent,
       }
     ]
   },
