@@ -48,7 +48,21 @@ iceServers: [
 ]
 ```
 
-Docker configuration soon.
+# Docker
+Clone the Puzz API in the Puzz project directory:
+```bash
+git clone https://github.com/dov-vai/PuzzApi.git
+```
+Build the docker image:
+```bash
+docker build -t puzz:latest
+```
+Start the container:
+```bash
+docker run -d -p 8181:8080 --name puzz-container puzz:latest
+```
+
+Replace port "8181" with your own, name "puzz-container" can also be changed.
 
 # Contributing
 Pull requests are always welcome.
