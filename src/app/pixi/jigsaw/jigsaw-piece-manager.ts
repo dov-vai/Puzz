@@ -7,7 +7,7 @@ import {JigsawEstimator} from "./jigsaw-estimator";
 
 export class JigsawPieceManager {
   private _worldContainer: PIXI.Container;
-  private _world: PIXI.Graphics;
+  private _world!: PIXI.Graphics;
   private _taggedPieces!: JigsawPiece[];
   private _tileWidth!: number;
   private _tileHeight!: number;
@@ -33,13 +33,14 @@ export class JigsawPieceManager {
     return this._world;
   }
 
-  constructor(worldContainer: PIXI.Container, world: PIXI.Graphics) {
+  constructor(worldContainer: PIXI.Container) {
     this._worldContainer = worldContainer;
-    this._world = world;
     this.random = Math.random;
   }
 
   public loadPieces(image: PIXI.Texture, seed: number, pieces: number) {
+    this.createWorld(image.width * 4, image.height * 4, 0x424769)
+    this.centerWorld();
     this.random = PixiUtils.splitMix32(seed);
     const estimated = JigsawEstimator.estimate(image.width, image.height, pieces, "backwards");
     this._tileWidth = estimated.pieceWidth;
@@ -48,6 +49,16 @@ export class JigsawPieceManager {
     this._taggedPieces = generator.generatePieces(5, 0x000000, SceneManager.appRenderer);
     const worldMidpoint = new PIXI.Point(this.world.width / 2, this.world.height / 2);
     this.placePieces(image, worldMidpoint);
+  }
+
+  // TODO: world management should have its own class?
+  private createWorld(width: number, height: number, color: PIXI.ColorSource) {
+    this._world = new PIXI.Graphics().rect(0, 0, width, height).fill({color: color});
+    this.worldContainer.addChild(this._world);
+  }
+
+  private centerWorld() {
+    this.worldContainer.position.set(-this.world.width / 2, -this.world.height / 2);
   }
 
   private placePieces(image: PIXI.Texture, position: PIXI.Point) {

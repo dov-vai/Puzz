@@ -19,9 +19,9 @@ export class JigsawManager {
   private syncHandler: SyncHandler;
   private prevWorldPointer: PIXI.Point;
 
-  constructor(private worldContainer: PIXI.Container, private world: PIXI.Graphics, image?: File, pieces?: number) {
+  constructor(private worldContainer: PIXI.Container, image?: File, pieces?: number) {
     this.imageLoader = new ImageLoader();
-    this.jigsawPieceManager = new JigsawPieceManager(worldContainer, world);
+    this.jigsawPieceManager = new JigsawPieceManager(worldContainer);
     this.playerManager = new PlayerManager(this.jigsawPieceManager);
     this.dragAndDropHandler = new DragAndDropHandler(this.jigsawPieceManager, this.playerManager);
     this.syncHandler = new SyncHandler(this.jigsawPieceManager);
@@ -59,15 +59,17 @@ export class JigsawManager {
 
   // TODO: still needs a better place for it to reside...
   broadcastPointer() {
-    const currentMousePos = SceneManager.appRenderer.events.pointer.global;
-    const worldPointer = this.world.toLocal(currentMousePos);
+    if (!this.jigsawPieceManager.world) return;
 
-    if ((this.prevWorldPointer.x != worldPointer.x || this.prevWorldPointer.y != worldPointer.y) && this.world.containsPoint(worldPointer)) {
+    const currentMousePos = SceneManager.appRenderer.events.pointer.global;
+    const worldPointer = this.jigsawPieceManager.world.toLocal(currentMousePos);
+
+    if ((this.prevWorldPointer.x != worldPointer.x || this.prevWorldPointer.y != worldPointer.y) && this.jigsawPieceManager.world.containsPoint(worldPointer)) {
       const message = new MessageEncoder();
       const target = this.dragAndDropHandler.dragTarget;
       let piece: PickedPiece | undefined;
       if (target) {
-        const piecePivot = target.toLocal(worldPointer, this.world);
+        const piecePivot = target.toLocal(worldPointer, this.jigsawPieceManager.world);
         piece = {
           id: target.id,
           pivotX: piecePivot.x,

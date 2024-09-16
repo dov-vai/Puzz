@@ -39,10 +39,6 @@ export class InfinityCanvas extends PIXI.Container {
     this.paused = false;
   }
 
-  setWorldPosition(x: number, y: number) {
-    this.position.set(x, y);
-  }
-
   private zoomEvent(event: WheelEvent) {
     let scaleFactor = event.deltaY < 0 ? 1.5 : 0.66;
     this.applyScale(scaleFactor, event.clientX, event.clientY);

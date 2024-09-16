@@ -9,29 +9,16 @@ export const SNAP_SOUND = 'snap';
 
 export class JigsawScene extends PIXI.Container implements IScene {
   private worldContainer: InfinityCanvas;
-  private world: PIXI.Graphics;
-  private prevWorldPointer: PIXI.Point;
   private jigsawManager: JigsawManager;
-  private worldSize: number;
 
   constructor(private peerManager: PeerManagerService, private image?: File, pieces?: number) {
     super();
-    this.worldSize = 5000;
-    this.prevWorldPointer = new PIXI.Point();
-
     sound.add(SNAP_SOUND, 'snap.wav');
     this.worldContainer = new InfinityCanvas(SceneManager.appRenderer.events);
     this.worldContainer.sortableChildren = true;
-    this.centerWorld();
-    this.world = new PIXI.Graphics().rect(0, 0, this.worldSize, this.worldSize).fill({color: 0x424769});
-    this.worldContainer.addChild(this.world);
     this.addChild(this.worldContainer);
-    this.jigsawManager = new JigsawManager(this.worldContainer, this.world, this.image, pieces);
+    this.jigsawManager = new JigsawManager(this.worldContainer, this.image, pieces);
     this.setupP2P();
-  }
-
-  private centerWorld() {
-    this.worldContainer.setWorldPosition(SceneManager.width / 2 - this.worldSize / 2, SceneManager.height / 2 - this.worldSize / 2);
   }
 
   private setupP2P() {
