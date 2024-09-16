@@ -53,6 +53,11 @@ export class InfinityCanvas extends PIXI.Container {
       this.scale.x * scaleFactor,
       this.scale.y * scaleFactor
     );
+
+    // limit scale so user doesn't lose the world
+    if (newScale.x >= 1 || newScale.x < 0.05 || newScale.y >= 1 || newScale.y < 0.05)
+      return;
+
     // apply zoom, convert new world coordinates back to screen coordinates
     let newScreenPos = new PIXI.Point(
       (worldPos.x) * newScale.x + this.x,
