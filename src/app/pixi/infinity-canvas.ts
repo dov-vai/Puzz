@@ -44,7 +44,7 @@ export class InfinityCanvas extends PIXI.Container {
     this.applyScale(scaleFactor, event.clientX, event.clientY);
   }
 
-  private applyScale(scaleFactor: number, x: number, y: number) {
+  public applyScale(scaleFactor: number, x: number, y: number) {
     let worldPos = new PIXI.Point(
       (x - this.x) / this.scale.x,
       (y - this.y) / this.scale.y

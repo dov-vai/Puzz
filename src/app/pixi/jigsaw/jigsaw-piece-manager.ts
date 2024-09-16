@@ -4,9 +4,10 @@ import {SceneManager} from "../scene-manager";
 import {JigsawNeighbour, JigsawPiece} from "./jigsaw-piece";
 import {PixiUtils} from "../utils";
 import {JigsawEstimator} from "./jigsaw-estimator";
+import {InfinityCanvas} from "../infinity-canvas";
 
 export class JigsawPieceManager {
-  private _worldContainer: PIXI.Container;
+  private _worldContainer: InfinityCanvas;
   private _world!: PIXI.Graphics;
   private _taggedPieces!: JigsawPiece[];
   private _tileWidth!: number;
@@ -33,14 +34,13 @@ export class JigsawPieceManager {
     return this._world;
   }
 
-  constructor(worldContainer: PIXI.Container) {
+  constructor(worldContainer: InfinityCanvas) {
     this._worldContainer = worldContainer;
     this.random = Math.random;
   }
 
   public loadPieces(image: PIXI.Texture, seed: number, pieces: number) {
-    this.createWorld(image.width * 4, image.height * 4, 0x424769)
-    this.centerWorld();
+    this.prepareWorld(image);
     this.random = PixiUtils.splitMix32(seed);
     const estimated = JigsawEstimator.estimate(image.width, image.height, pieces, "backwards");
     this._tileWidth = estimated.pieceWidth;
@@ -51,6 +51,13 @@ export class JigsawPieceManager {
     this.placePieces(image, worldMidpoint);
   }
 
+  private prepareWorld(image: PIXI.Texture) {
+    this.createWorld(image.width * 4, image.height * 4, 0x424769)
+    this.centerWorld();
+    const scale = Math.min(SceneManager.width / this.world.width, SceneManager.height / this.world.height);
+    this._worldContainer.applyScale(scale, SceneManager.width / 2, SceneManager.height / 2);
+  }
+
   // TODO: world management should have its own class?
   private createWorld(width: number, height: number, color: PIXI.ColorSource) {
     this._world = new PIXI.Graphics().rect(0, 0, width, height).fill({color: color});
@@ -58,7 +65,9 @@ export class JigsawPieceManager {
   }
 
   private centerWorld() {
-    this.worldContainer.position.set(-this.world.width / 2, -this.world.height / 2);
+    const worldCenter = new PIXI.Point(this._world.width / 2, this._world.height / 2);
+    const screenCenter = new PIXI.Point(SceneManager.width / 2, SceneManager.height / 2);
+    this.worldContainer.position.set(screenCenter.x - worldCenter.x, screenCenter.y - worldCenter.y);
   }
 
   private placePieces(image: PIXI.Texture, position: PIXI.Point) {

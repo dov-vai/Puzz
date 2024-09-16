@@ -9,6 +9,7 @@ import {SceneManager} from "../scene-manager";
 import {MessageEncoder} from "../../network/message-encoder";
 import {CursorMessage, PickedPiece} from "../../network/protocol/cursor-message";
 import {SyncRequestMessage} from "../../network/protocol/sync-request-message";
+import {InfinityCanvas} from "../infinity-canvas";
 
 
 export class JigsawManager {
@@ -19,7 +20,7 @@ export class JigsawManager {
   private syncHandler: SyncHandler;
   private prevWorldPointer: PIXI.Point;
 
-  constructor(private worldContainer: PIXI.Container, image?: File, pieces?: number) {
+  constructor(worldContainer: InfinityCanvas, image?: File, pieces?: number) {
     this.imageLoader = new ImageLoader();
     this.jigsawPieceManager = new JigsawPieceManager(worldContainer);
     this.playerManager = new PlayerManager(this.jigsawPieceManager);
