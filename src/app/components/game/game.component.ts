@@ -39,6 +39,7 @@ export class GameComponent implements AfterViewInit, OnDestroy {
   subscription?: Subscription;
   extras?: GameExtras;
   showImage: boolean = false;
+  showPopup: boolean = true;
   imageUri?: string;
   @ViewChild("gameCanvas")
   gameCanvas!: ElementRef<HTMLCanvasElement>;
@@ -98,6 +99,10 @@ export class GameComponent implements AfterViewInit, OnDestroy {
     if (this.imageUri) {
       this.showImage = !this.showImage;
     }
+  }
+
+  closePopup() {
+    this.showPopup = false;
   }
 
   ngOnDestroy() {
