@@ -1,9 +1,9 @@
-import {Component, inject, OnDestroy, OnInit} from '@angular/core';
-import {WebSocketService} from "../../services/web-socket/web-socket.service";
-import {Observable, Subject, Subscription} from "rxjs";
+import {Component, inject, OnInit} from '@angular/core';
+import {Observable} from "rxjs";
 import {AsyncPipe, NgForOf, NgIf} from "@angular/common";
 import {Router} from "@angular/router";
-import {PublicRoom, PublicRooms, Types} from "../../services/web-socket/types";
+import {RoomService} from "../../services/room/room.service";
+import {PublicRoom} from "../../services/room/public-room";
 
 @Component({
   selector: 'app-public-games',
@@ -16,29 +16,13 @@ import {PublicRoom, PublicRooms, Types} from "../../services/web-socket/types";
   templateUrl: './public-games.component.html',
   styleUrl: './public-games.component.css'
 })
-export class PublicGamesComponent implements OnInit, OnDestroy {
-  websocket = inject(WebSocketService);
+export class PublicGamesComponent implements OnInit {
+  private roomService = inject(RoomService);
   router = inject(Router);
-  subscription!: Subscription;
-  publicRoomsSubject$: Subject<PublicRoom[]> = new Subject<PublicRoom[]>();
-  publicRooms$: Observable<PublicRoom[]> = this.publicRoomsSubject$.asObservable();
+  publicRooms$!: Observable<PublicRoom[]>;
 
   ngOnInit(): void {
-    this.subscription = this.websocket.messages$.subscribe(this.onMessage.bind(this));
-    this.websocket.connect();
     this.onRefreshRooms();
-  }
-
-  onMessage(message: any) {
-    switch (message.Type) {
-      case Types.PublicRooms: {
-        this.publicRoomsSubject$.next(message.Rooms as PublicRoom[]);
-        break;
-      }
-      default: {
-        break;
-      }
-    }
   }
 
   onJoin(roomId: string) {
@@ -46,11 +30,6 @@ export class PublicGamesComponent implements OnInit, OnDestroy {
   }
 
   onRefreshRooms() {
-    const publicRooms: PublicRooms = {Type: "publicRooms"};
-    this.websocket.sendMessage(publicRooms);
-  }
-
-  ngOnDestroy(): void {
-    this.subscription.unsubscribe();
+    this.publicRooms$ = this.roomService.getPublicRooms();
   }
 }

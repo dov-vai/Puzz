@@ -2,27 +2,24 @@ import {ComponentFixture, TestBed} from '@angular/core/testing';
 
 import {PublicGamesComponent} from './public-games.component';
 import {Router} from "@angular/router";
-import {WebSocketService} from "../../services/web-socket/web-socket.service";
-import {Subject} from "rxjs";
-import {PublicRoom} from "../../services/web-socket/types";
+import {RoomService} from "../../services/room/room.service";
+import {PublicRoom} from "../../services/room/public-room";
+import {of} from "rxjs";
 
 describe('PublicGamesComponent', () => {
   let component: PublicGamesComponent;
   let fixture: ComponentFixture<PublicGamesComponent>;
-  let websocketServiceMock: jasmine.SpyObj<WebSocketService>;
+  let roomServiceMock: jasmine.SpyObj<RoomService>;
   let routerMock: jasmine.SpyObj<Router>;
 
   beforeEach(async () => {
-    websocketServiceMock = jasmine.createSpyObj('WebSocketService', ['connect', 'sendMessage'], {
-      messages$: new Subject()
-    });
+    roomServiceMock = jasmine.createSpyObj('RoomService', ['getPublicRooms']);
     routerMock = jasmine.createSpyObj('Router', ['navigate']);
-
 
     await TestBed.configureTestingModule({
       imports: [PublicGamesComponent],
       providers: [
-        {provide: WebSocketService, useValue: websocketServiceMock},
+        {provide: RoomService, useValue: roomServiceMock},
         {provide: Router, useValue: routerMock},
       ]
     })
@@ -37,47 +34,33 @@ describe('PublicGamesComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should handle publicRooms message', () => {
-    const rooms: PublicRoom[] = [{Id: '1', Title: 'Room 1', Pieces: 100, PlayerCount: 4}];
-    component.onMessage({Type: 'publicRooms', Rooms: rooms});
-    component.publicRooms$.subscribe(data => {
-      expect(data).toEqual(rooms);
+  describe('ngOnInit', () => {
+    it('should call onRefreshRooms', () => {
+      spyOn(component, 'onRefreshRooms');
+      component.ngOnInit();
+      expect(component.onRefreshRooms).toHaveBeenCalled();
     });
   });
 
-  describe('onMessage', () => {
-    it('should handle publicRooms message', () => {
-      const rooms: PublicRoom[] = [{Id: '1', Title: 'Room 1', Pieces: 100, PlayerCount: 4}];
-      component.onMessage({Type: 'publicRooms', Rooms: rooms});
-      component.publicRooms$.subscribe(data => {
-        expect(data).toEqual(rooms);
-      });
-    });
-
-    it('should handle connected message and navigate to the play route', () => {
-      const message = {Type: 'connected', SocketId: '123', RoomId: '1'};
-      component.onMessage(message);
-      expect(routerMock.navigate).toHaveBeenCalledWith(['play', '1']);
-    });
-
-    it('should handle unknown message types without errors', () => {
-      const unknownMessage = {Type: 'unknownType'};
-      expect(() => component.onMessage(unknownMessage)).not.toThrow();
+  describe('onJoin', () => {
+    it('should navigate to the play route with roomId', () => {
+      const roomId = '1';
+      component.onJoin(roomId);
+      expect(routerMock.navigate).toHaveBeenCalledWith(['play', roomId]);
     });
   });
 
   describe('onRefreshRooms', () => {
-    it('should send a publicRooms message', () => {
-      component.onRefreshRooms();
-      expect(websocketServiceMock.sendMessage).toHaveBeenCalledWith({Type: 'publicRooms'});
-    });
-  });
+    it('should set publicRooms$ observable with rooms from RoomService', () => {
+      const rooms: PublicRoom[] = [{id: '1', title: 'Room 1', pieces: 100, playerCount: 4}];
+      roomServiceMock.getPublicRooms.and.returnValue(of(rooms));
 
-  describe('ngOnDestroy', () => {
-    it('should unsubscribe from the websocket messages$', () => {
-      component.ngOnInit();
-      component.ngOnDestroy();
-      expect(component.subscription.closed).toBeTrue();
+      component.onRefreshRooms();
+
+      component.publicRooms$.subscribe(data => {
+        expect(data).toEqual(rooms);
+      });
+      expect(roomServiceMock.getPublicRooms).toHaveBeenCalled();
     });
   });
 });

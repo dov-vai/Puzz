@@ -13,11 +13,11 @@
     <tbody>
       @if (publicRooms$ | async; as publicRooms) {
         <tr *ngFor="let room of publicRooms">
-          <td>{{ room.Title }}</td>
-          <td>{{ room.Pieces }}</td>
-          <td>{{ room.PlayerCount }}</td>
+          <td>{{ room.title }}</td>
+          <td>{{ room.pieces }}</td>
+          <td>{{ room.playerCount }}</td>
           <td>
-            <button class="button is-primary" (click)="onJoin(room.Id)">Join</button>
+            <button class="button is-primary" (click)="onJoin(room.id)">Join</button>
           </td>
         </tr>
       }
