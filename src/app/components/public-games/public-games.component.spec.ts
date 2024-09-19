@@ -1,10 +1,9 @@
 import {ComponentFixture, TestBed} from '@angular/core/testing';
-
 import {PublicGamesComponent} from './public-games.component';
 import {Router} from "@angular/router";
 import {RoomService} from "../../services/room/room.service";
-import {PublicRoom} from "../../services/room/public-room";
 import {of} from "rxjs";
+import {PublicRoom} from "../../services/room/types";
 
 describe('PublicGamesComponent', () => {
   let component: PublicGamesComponent;

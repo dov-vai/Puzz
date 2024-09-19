@@ -27,7 +27,9 @@
       <div class="column is-9">
         <input class="input" type="number" placeholder="Piece count" formControlName="pieces"
                (input)="onPiecesChanged($event)">
-        <p class="help is-warning" *ngIf="estimatedPieces">Actual pieces: {{ estimatedPieces.columns * estimatedPieces.rows }}, image divided into {{ estimatedPieces.rows }}x{{ estimatedPieces.columns }}</p>
+        <p class="help is-warning" *ngIf="estimatedPieces">
+          Actual pieces: {{ estimatedPieces.columns * estimatedPieces.rows }}, image divided into {{ estimatedPieces.rows }}x{{ estimatedPieces.columns }}
+        </p>
       </div>
       <div class="column">
         <div class="buttons has-addons is-centered">

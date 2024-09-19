@@ -1,7 +1,7 @@
 import {Injectable} from '@angular/core';
 import {HttpClient} from "@angular/common/http";
-import {PublicRoom} from "./public-room";
 import {environment} from "../../../environments/environment";
+import {Host, PublicRoom, Room} from "./types";
 
 const API_URL = environment.apiUrl;
 
@@ -15,5 +15,9 @@ export class RoomService {
 
   getPublicRooms() {
     return this.http.get<PublicRoom[]>(API_URL + "/public-rooms");
+  }
+
+  hostRoom(host: Host) {
+    return this.http.post<Room>(API_URL + "/host-game", host);
   }
 }

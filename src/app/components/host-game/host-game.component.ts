@@ -1,12 +1,11 @@
-import {Component, inject, OnDestroy, OnInit} from '@angular/core';
+import {Component, inject, OnDestroy} from '@angular/core';
 import {Router, RouterLink} from "@angular/router";
-import {WebSocketService} from "../../services/web-socket/web-socket.service";
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from "@angular/forms";
 import {NgClass, NgIf} from "@angular/common";
-import {Subscription} from "rxjs";
 import {GameExtras} from "../game/game.component";
 import {JigsawEstimator} from "../../pixi/jigsaw/jigsaw-estimator";
-import {Host, Types} from "../../services/web-socket/types";
+import {RoomService} from "../../services/room/room.service";
+import {Host} from "../../services/room/types";
 
 @Component({
   selector: 'app-host-game',
@@ -20,17 +19,11 @@ import {Host, Types} from "../../services/web-socket/types";
   templateUrl: './host-game.component.html',
   styleUrl: './host-game.component.css'
 })
-export class HostGameComponent implements OnInit, OnDestroy {
-  websocket = inject(WebSocketService);
+export class HostGameComponent implements OnDestroy {
+  private roomService = inject(RoomService);
   router = inject(Router);
-  subscription!: Subscription;
   img?: HTMLImageElement;
   estimatedPieces?: { rows: number, columns: number, pieceWidth: number, pieceHeight: number };
-
-  ngOnInit(): void {
-    this.subscription = this.websocket.messages$.subscribe(this.onMessage.bind(this));
-    this.websocket.connect();
-  }
 
   roomForm = new FormGroup({
     title: new FormControl('', [Validators.required]),
@@ -96,29 +89,21 @@ export class HostGameComponent implements OnInit, OnDestroy {
 
   onSubmit() {
     const host: Host = {
-      Type: "host",
       Title: this.title?.value!,
       Pieces: this.pieces?.value!,
       Public: this.publicRoom?.value!
     };
-    this.websocket.sendMessage(host);
-  }
 
-  onMessage(message: any) {
-    switch (message.Type) {
-      case Types.Connected: {
-        console.log("connected succesfully, SocketId:", message.SocketId);
-
+    this.roomService.hostRoom(host).subscribe({
+      next: response => {
         // TODO: image verification
         const extras: GameExtras = {image: this.image!.value!, pieces: Number(this.pieces!.value)}
-        this.router.navigate(['play', message.RoomId], {state: extras});
-        break;
+        this.router.navigate(['play', response.roomId], {state: extras});
+      },
+      error: error => {
+        console.log("error hosting the game", error);
       }
-      default: {
-        console.log("invalid message?", message);
-        break;
-      }
-    }
+    })
   }
 
   private revokeImageUrl() {
@@ -128,7 +113,6 @@ export class HostGameComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.subscription.unsubscribe();
     this.revokeImageUrl();
   }
 }

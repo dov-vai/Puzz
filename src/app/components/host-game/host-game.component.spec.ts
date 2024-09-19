@@ -1,40 +1,34 @@
 import {ComponentFixture, TestBed} from '@angular/core/testing';
-
 import {HostGameComponent} from './host-game.component';
 import {Subject} from "rxjs";
-import {WebSocketService} from "../../services/web-socket/web-socket.service";
 import {Router} from "@angular/router";
+import {RoomService} from "../../services/room/room.service";
 
 describe('HostGameComponent', () => {
   let component: HostGameComponent;
   let fixture: ComponentFixture<HostGameComponent>;
-  let mockWebSocketService: any;
+  let mockRoomService: any;
   let mockRouter: any;
   let messageSubject: Subject<any>;
 
   beforeEach(async () => {
     messageSubject = new Subject();
 
-    mockWebSocketService = {
-      connect: jasmine.createSpy('connect'),
-      sendMessage: jasmine.createSpy('sendMessage'),
-      messages$: messageSubject.asObservable()
+    mockRoomService = {
+      hostRoom: jasmine.createSpy('hostRoom').and.returnValue(messageSubject.asObservable())
     };
 
     mockRouter = {
       navigate: jasmine.createSpy('navigate')
     };
 
-
     await TestBed.configureTestingModule({
       imports: [HostGameComponent],
       providers: [
-        {provide: WebSocketService, useValue: mockWebSocketService},
+        {provide: RoomService, useValue: mockRoomService},
         {provide: Router, useValue: mockRouter},
       ]
-
-    })
-      .compileComponents();
+    }).compileComponents();
 
     fixture = TestBed.createComponent(HostGameComponent);
     component = fixture.componentInstance;
@@ -69,22 +63,26 @@ describe('HostGameComponent', () => {
     expect(piecesControl?.valid).toBeTrue();
   });
 
-  it('should connect to WebSocket on init', () => {
-    expect(mockWebSocketService.connect).toHaveBeenCalled();
-  });
-
-  it('should send message on submit', () => {
+  it('should host room and navigate on submit', () => {
     component.title?.setValue('Test Room');
     component.pieces?.setValue(10);
     component.publicRoom?.setValue(true);
+    const mockFile = new File([''], 'image.png', { type: 'image/png' });
+    component.roomForm.patchValue({ image: mockFile });
 
     component.onSubmit();
 
-    expect(mockWebSocketService.sendMessage).toHaveBeenCalledWith({
-      Type: 'host',
+    const hostResponse = { roomId: '123' };
+    messageSubject.next(hostResponse);
+
+    expect(mockRoomService.hostRoom).toHaveBeenCalledWith({
       Title: 'Test Room',
       Pieces: 10,
       Public: true
+    });
+
+    expect(mockRouter.navigate).toHaveBeenCalledWith(['play', '123'], {
+      state: { image: mockFile, pieces: 10 }
     });
   });
 });

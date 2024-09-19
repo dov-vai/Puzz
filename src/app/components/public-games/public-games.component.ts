@@ -3,7 +3,7 @@ import {Observable} from "rxjs";
 import {AsyncPipe, NgForOf, NgIf} from "@angular/common";
 import {Router} from "@angular/router";
 import {RoomService} from "../../services/room/room.service";
-import {PublicRoom} from "../../services/room/public-room";
+import {PublicRoom} from "../../services/room/types";
 
 @Component({
   selector: 'app-public-games',

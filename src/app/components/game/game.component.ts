@@ -49,11 +49,6 @@ export class GameComponent implements AfterViewInit, OnDestroy {
   }
 
   ngAfterViewInit(): void {
-    if (this.extras) {
-      this.startGame();
-      return;
-    }
-
     const roomId = this.activatedRoute.snapshot.paramMap.get("id");
 
     if (!roomId) {
