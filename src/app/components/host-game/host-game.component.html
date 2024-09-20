@@ -1,5 +1,4 @@
 <div class="box">
-
   <form [formGroup]="roomForm" (ngSubmit)="onSubmit()">
     <div class="field">
       <label class="label">Room title</label>
@@ -28,7 +27,8 @@
         <input class="input" type="number" placeholder="Piece count" formControlName="pieces"
                (input)="onPiecesChanged($event)">
         <p class="help is-warning" *ngIf="estimatedPieces">
-          Actual pieces: {{ estimatedPieces.columns * estimatedPieces.rows }}, image divided into {{ estimatedPieces.rows }}x{{ estimatedPieces.columns }}
+          Actual pieces: {{ estimatedPieces.columns * estimatedPieces.rows }}, image divided
+          into {{ estimatedPieces.rows }}x{{ estimatedPieces.columns }}
         </p>
       </div>
       <div class="column">
@@ -45,6 +45,13 @@
       <label class="checkbox">
         <input type="checkbox" formControlName="publicRoom"/>
         Public Room
+      </label>
+    </div>
+
+    <div class="field">
+      <label class="checkbox">
+        <input type="checkbox" formControlName="guests"/>
+        Guests Allowed (non-registered users)
       </label>
     </div>
 

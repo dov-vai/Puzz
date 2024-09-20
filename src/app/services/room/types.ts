@@ -9,6 +9,7 @@ export interface Host {
   Title: string;
   Pieces: number;
   Public: boolean;
+  Guests: boolean;
 }
 
 export interface Room {

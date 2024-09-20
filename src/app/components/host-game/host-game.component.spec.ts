@@ -67,12 +67,12 @@ describe('HostGameComponent', () => {
     component.title?.setValue('Test Room');
     component.pieces?.setValue(10);
     component.publicRoom?.setValue(true);
-    const mockFile = new File([''], 'image.png', { type: 'image/png' });
-    component.roomForm.patchValue({ image: mockFile });
+    const mockFile = new File([''], 'image.png', {type: 'image/png'});
+    component.roomForm.patchValue({image: mockFile});
 
     component.onSubmit();
 
-    const hostResponse = { roomId: '123' };
+    const hostResponse = {roomId: '123'};
     messageSubject.next(hostResponse);
 
     expect(mockRoomService.hostRoom).toHaveBeenCalledWith({
@@ -82,7 +82,7 @@ describe('HostGameComponent', () => {
     });
 
     expect(mockRouter.navigate).toHaveBeenCalledWith(['play', '123'], {
-      state: { image: mockFile, pieces: 10 }
+      state: {image: mockFile, pieces: 10}
     });
   });
 });

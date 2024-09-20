@@ -1,11 +1,14 @@
-import {Component, inject, OnDestroy} from '@angular/core';
+import {Component, inject, OnDestroy, OnInit} from '@angular/core';
 import {Router, RouterLink} from "@angular/router";
 import {FormControl, FormGroup, ReactiveFormsModule, Validators} from "@angular/forms";
-import {NgClass, NgIf} from "@angular/common";
+import {AsyncPipe, NgClass, NgIf} from "@angular/common";
 import {GameExtras} from "../game/game.component";
 import {JigsawEstimator} from "../../pixi/jigsaw/jigsaw-estimator";
 import {RoomService} from "../../services/room/room.service";
 import {Host} from "../../services/room/types";
+import {AuthService} from "../../services/auth/auth.service";
+import {Observable} from "rxjs";
+import {UserInfo} from "../../services/auth/user-info";
 
 @Component({
   selector: 'app-host-game',
@@ -14,23 +17,36 @@ import {Host} from "../../services/room/types";
     RouterLink,
     ReactiveFormsModule,
     NgIf,
-    NgClass
+    NgClass,
+    AsyncPipe
   ],
   templateUrl: './host-game.component.html',
   styleUrl: './host-game.component.css'
 })
-export class HostGameComponent implements OnDestroy {
+export class HostGameComponent implements OnInit, OnDestroy {
   private roomService = inject(RoomService);
+  private authService = inject(AuthService);
   router = inject(Router);
   img?: HTMLImageElement;
   estimatedPieces?: { rows: number, columns: number, pieceWidth: number, pieceHeight: number };
+  userInfo$!: Observable<UserInfo | null>;
 
   roomForm = new FormGroup({
     title: new FormControl('', [Validators.required]),
     image: new FormControl((null as File | null), [Validators.required]),
     pieces: new FormControl(100, [Validators.required, Validators.min(2)]),
     publicRoom: new FormControl(false),
+    guests: new FormControl({value: true, disabled: true}),
   })
+
+  ngOnInit(): void {
+    this.userInfo$ = this.authService.userInfo$;
+    this.userInfo$.subscribe(userInfo => {
+      if (userInfo) {
+        this.guests?.enable();
+      }
+    });
+  }
 
   get title() {
     return this.roomForm.get('title');
@@ -48,6 +64,10 @@ export class HostGameComponent implements OnDestroy {
 
   get publicRoom() {
     return this.roomForm.get('publicRoom');
+  }
+
+  get guests() {
+    return this.roomForm.get('guests');
   }
 
   get image() {
@@ -91,7 +111,8 @@ export class HostGameComponent implements OnDestroy {
     const host: Host = {
       Title: this.title?.value!,
       Pieces: this.pieces?.value!,
-      Public: this.publicRoom?.value!
+      Public: this.publicRoom?.value!,
+      Guests: this.guests?.value!
     };
 
     this.roomService.hostRoom(host).subscribe({
